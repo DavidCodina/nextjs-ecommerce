@@ -39,7 +39,7 @@ import {
   SidebarSeparator,
   SidebarTrigger,
   useSidebar
-} from './Sidebar'
+} from '../Sidebar'
 
 // import {
 //   Collapsible,
@@ -56,7 +56,10 @@ import {
 
 import { ThemeToggle } from 'components'
 
-import { SIDEBAR_WIDTH, SIDEBAR_WIDTH_MOBILE } from './Sidebar/SidebarConstants'
+import {
+  SIDEBAR_WIDTH,
+  SIDEBAR_WIDTH_MOBILE
+} from '../Sidebar/SidebarConstants'
 
 const items = [
   {

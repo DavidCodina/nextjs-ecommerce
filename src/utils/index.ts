@@ -10,3 +10,4 @@ export * from './sleep'
 
 export * from './serializeData'
 export * from './formatNumberWithDecimal'
+export * from './formatError'

@@ -41,6 +41,12 @@ import { getLatestProducts } from '@/lib/actions/product.actions'
 //
 //         npm i -D @types/ws bufferutil
 //
+/////////////////////////
+//
+// NextAuth:
+//
+//   Began watching Code With Antonio tutorial: https://www.youtube.com/watch?v=1MTyCvS05V4&t=1s
+//   It doesn't really get interesting until 1:40:00.
 //
 ///////////////////////////////////////////////////////////////////////////
 

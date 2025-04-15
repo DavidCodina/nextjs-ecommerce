@@ -22,11 +22,15 @@ datasource db {
 
 model Product {
   // This id definition is more complex that usual.
-  // How does it differe from just: id  String @id @default(uuid()) ?
+  // How does it differ from just: id  String @id @default(uuid()) ?
+  // This delegates UUID generation to the database using gen_random_uuid().
+  // The advantage is that the database ensures unique IDs without relying on Prisma or the application layer.
+  // @db.Uuid is a Prisma database type annotation that ensures the underlying database stores the field 
+  // as a UUID type rather than a generic string.
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
   name        String
-  slug        String   @unique(map: "product_slug_idx")
+  slug        String   @unique(map: "product_slug_index")
   category    String
   images      String[]
   brand       String
@@ -64,70 +68,105 @@ model Product {
   numReviews Int      @default(0)
   isFeatured Boolean  @default(false)
   banner     String?
-  // @db.Timestamp(6) adds milliseconds on to the end of it with 6 digits.
-  createdAt  DateTime @default(now()) @db.Timestamp(6)
+  // Brad appends @db.Timestamp(6). I don't think it's necessary.
+  createdAt  DateTime @default(now())
   // OrderItem   OrderItem[]
   // Review      Review[]
 
   @@map("products")
 }
 
-// model User {
-//   id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-//   name          String    @default("NO_NAME")
-//   email         String    @unique(map: "user_email_idx")
-//   emailVerified DateTime? @db.Timestamp(6)
-//   image         String?
-//   password      String?
-//   role          String    @default("user")
-//   address       Json?     @db.Json
-//   paymentMethod String?
-//   createdAt     DateTime  @default(now()) @db.Timestamp(6)
-//   updatedAt     DateTime  @updatedAt
-//   account       Account[]
-//   session       Session[]
-//   Cart          Cart[]
-//   Order         Order[]
-//   Review        Review[]
-// }
+model User {
+  id   String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  // Eventually switch to fistName and lastName
+  // Brad does this:
+  // name String @default("NO_NAME")
+  name String
 
-// model Account {
-//   userId            String  @db.Uuid
-//   type              String
-//   provider          String
-//   providerAccountId String
-//   refresh_token     String?
-//   access_token      String?
-//   expires_at        Int?
-//   token_type        String?
-//   scope             String?
-//   id_token          String?
-//   session_state     String?
+  // Brad does this, but I don't think it's necessary.
+  // email         String    @unique(map: "user_email_index")
+  email         String    @unique
+  // Brad does this:
+  // emailVerified DateTime? @db.Timestamp(6)
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
 
-//   createdAt DateTime @default(now()) @db.Timestamp(6)
-//   updatedAt DateTime @updatedAt
+  // ⚠️ At 1:52:30 Coding with Antionio removes sessions.
+  // sessions Session[]
 
-//   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  password      String?
+  //# Not loving this. It's preferable to have an array of roles.
+  role          String   @default("user")
+  address       Json?    @db.Json // @db.Json may be redundant when using Postgres.
+  paymentMethod String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-//   @@id([provider, providerAccountId])
-// }
+  // Cart          Cart[]
+  // Order         Order[]
+  // Review        Review[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId            String  @db.Uuid
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+///////////////////////////////////////////////////////////////////////////
+//
+// ⚠️ Since you're using a JWT strategy, you don’t necessarily need the Session model.
+// With JWT, authentication tokens are stored client-side (like in localStorage or cookies) 
+// rather than in a database. The token itself contains everything needed for authentication, 
+// so the server doesn’t need to track active sessions.
+//
+///////////////////////////////////////////////////////////////////////////
 
 // model Session {
-//   sessionToken String   @id
+//   id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+//   sessionToken String   @unique
 //   userId       String   @db.Uuid
-//   expires      DateTime @db.Timestamp(6)
+//   expires      DateTime
 //   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-//   createdAt DateTime @default(now()) @db.Timestamp(6)
-//   updatedAt DateTime @updatedAt
+//   @@map("sessions")
 // }
+
+///////////////////////////////////////////////////////////////////////////
+//
+// ⚠️ At 1:53:45 Coding with Antonio discusses omitting this.
+// He says that we will later implement our own.
+// He says it's kind of misleading and not actually intended for
+// the credentials provider. Instead, it's actually intended to be
+// used with the email provider (i.e., magic link). Hence the `token` part.
+// Magic links work by sending a temporary token via email, allowing the 
+// user to sign in without a password. The VerificationToken model stores 
+// that token and expiration timestamp for this passwordless login flow.
+//
+///////////////////////////////////////////////////////////////////////////
 
 // model VerificationToken {
 //   identifier String
 //   token      String
 //   expires    DateTime
-
-//   @@id([identifier, token])
+//   @@unique([identifier, token])
+//   @@map("verification_tokens")
 // }
 
 // model Cart {

@@ -26,21 +26,22 @@ export const LATEST_PRODUCTS_LIMIT =
   
 ====================== */
 
-// export const signInDefaultValues = {
-//   email: 'admin@example.com',
-//   password: '123456'
-// }
+//! Don't do this in production!
+export const signInDefaultValues = {
+  email: 'admin@example.com',
+  password: '123456'
+}
 
 /* ======================
   
 ====================== */
 
-// export const signUpDefaultValues = {
-//   name: '',
-//   email: '',
-//   password: '',
-//   confirmPassword: ''
-// }
+export const signUpDefaultValues = {
+  name: '',
+  email: '',
+  password: '',
+  confirmPassword: ''
+}
 
 /* ======================
   

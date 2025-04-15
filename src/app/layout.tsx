@@ -13,6 +13,8 @@ import {
   SidebarInset
 } from 'components/Sidebar'
 
+import { UserButton } from './UserButton'
+
 import { AppSidebar } from 'components/AppSidebar'
 import { APP_NAME, APP_DESCRIPTION, SERVER_URL } from '@/lib/constants'
 
@@ -64,6 +66,14 @@ export default async function RootLayout({
         }}
       >
         <Providers>
+          {/* 
+          //! This is a temporary solution...
+          */}
+
+          <div className='fixed top-4 right-4 z-50'>
+            <UserButton />
+          </div>
+
           {/* The SidebarProvider is consumed here and not with the other providers in order
           to implement the optional 'persisted State' feature with cookies. */}
 
