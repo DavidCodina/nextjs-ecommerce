@@ -16,11 +16,13 @@ import { sleep } from 'utils/sleep'
 // import { cookies } from 'next/headers'
 // import { decode } from 'next-auth/jwt'
 
-type LoginResponse = {
-  data: null
-  message: string
-  success: boolean
-}
+// type LoginResponse = {
+//   data: null
+//   message: string
+//   success: boolean
+// }
+
+type LoginResponse = any
 
 /* ========================================================================
 
@@ -117,7 +119,7 @@ export const login = async ({
       message: 'Login success.',
       success: true
     }
-  } catch (_err) {
+  } catch (err) {
     ///////////////////////////////////////////////////////////////////////////
     //
     // if (err instanceof Error) {
@@ -140,9 +142,29 @@ export const login = async ({
     // }
     //
     ///////////////////////////////////////////////////////////////////////////
+
+    let originalMessage = ''
+    if (err instanceof Error) {
+      if (
+        err.cause &&
+        typeof err.cause === 'object' &&
+        'err' in err.cause &&
+        err.cause.err instanceof Error
+      ) {
+        originalMessage = err.cause.err.message
+      }
+
+      // console.log({
+      //   name: err.name,
+      //   message: err.message,
+      //   originalMessage
+      // })
+    }
     return {
       data: null,
-      message: "'Invalid email or password. (Server)",
+      //` message: "'Invalid email or password. (Server)",
+      message: err instanceof Error ? err.message : 'Server error???',
+      originalMessage: originalMessage,
       success: false
     }
   }

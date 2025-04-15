@@ -62,6 +62,8 @@ export const publicRoutes = [
 export const authRoutes = [
   '/login',
   '/register',
+  '/sign-in', //! Temporary
+  '/sign-up', //! Temporary
 
   // Currently, not being used but still good to list:
   '/error',

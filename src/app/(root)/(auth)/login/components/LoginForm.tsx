@@ -175,6 +175,9 @@ export const LoginForm = () => {
       const res = await login({ email, password })
 
       if (res.success === false && typeof res.message === 'string') {
+        //! Temporary...
+        console.log('originalMessage', res.originalMessage)
+        console.log('message', res.message)
         toast.error(res.message, {
           duration: Infinity
         })
