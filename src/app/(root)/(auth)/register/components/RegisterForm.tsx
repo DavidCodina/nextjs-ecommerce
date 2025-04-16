@@ -4,14 +4,12 @@ import { Fragment, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
-// import Link from 'next/link'
+import { Button, Input } from '@/components'
+import { register } from '../actions'
 
 // import * as z from "zod";
 // import { useForm } from "react-hook-form";
 // import { zodResolver } from "@hookform/resolvers/zod";
-
-import { Button, Input } from '@/components'
-import { register } from '../actions'
 
 /* ========================================================================
 

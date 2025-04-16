@@ -125,9 +125,17 @@ export default auth((req) => {
     if (nextUrl.search) {
       ///////////////////////////////////////////////////////////////////////////
       //
-      // When signing out, logout=true is set in the query string.
-      // We can use the presence of this search param to opt out of
-      // assiging a callbackUrl.
+      // When signing out, 'logout=true' is set in the query string.
+      // This is set in AppSidebar's 'Sign Out' button:
+      //
+      //   onClick={() => {
+      //     const searchParams = new URLSearchParams(window.location.search)
+      //     searchParams.set('logout', 'true')
+      //     window.history.replaceState(null, '',`?${searchParams.toString()}`)
+      //     signOut({ redirect: true })
+      //   }}
+      //
+      // We can use the presence of this search param to opt out of assiging a callbackUrl.
       //
       // When you’re performing a redirect within the middleware, including nextUrl as the base in the new URL()
       // constructor ensures that the redirect maintains the same host and protocol as the original request.
@@ -135,7 +143,7 @@ export default auth((req) => {
       // Why? Because users are never redirected to '/login' from a public route.
       //
       ///////////////////////////////////////////////////////////////////////////
-      //! Where is logout=true set?
+
       if (nextUrl.search.includes('logout=true')) {
         return Response.redirect(new URL(`/login`, nextUrl))
       }

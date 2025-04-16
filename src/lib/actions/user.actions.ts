@@ -10,8 +10,8 @@ import {
 
 import {
   // auth,
-  signIn,
-  signOut
+  signIn
+  // signOut
 } from '@/auth'
 import { isRedirectError } from 'next/dist/client/components/redirect-error'
 
@@ -113,20 +113,21 @@ export async function signInWithCredentials(
 
 ====================== */
 // Sign user out
+//# I switched to using a client-side signOut() inside the Sidebar.
+//# However, there's other logic here that we'll eventually need to implement
+//# in conjunction with signing out. At that point, it may make more sense
+//# to switch back to a server action.
 
-export async function signOutUser() {
-  // get current users cart and delete it so it does not persist to next user
-  //# const currentCart = await getMyCart()
-
-  //# if (currentCart?.id) {
-  //#   await prisma.cart.delete({ where: { id: currentCart.id } })
-  //# } else {
-  //#   console.warn('No cart found for deletion.')
-  //# }
-
-  //# Needs try/catch
-  await signOut()
-}
+// export async function signOutUser() {
+//   // get current users cart and delete it so it does not persist to next user
+//    const currentCart = await getMyCart()
+// if (currentCart?.id) {
+//   await prisma.cart.delete({ where: { id: currentCart.id } })
+// } else {
+//   console.warn('No cart found for deletion.')
+// }
+//   await signOut()
+// }
 
 /* ======================
 

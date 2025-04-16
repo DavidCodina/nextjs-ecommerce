@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 
 import { auth } from '@/auth'
 import { Page, PageContainer, Title } from '@/components'
-//# import { ShowSession } from './components/ShowSession'
+import { ShowSession } from './components/ShowSession'
 
 export const metadata: Metadata = {
   title: 'User',
@@ -86,7 +86,7 @@ const PageUser = async () => {
           </p>
         </div>
 
-        {/* <ShowSession /> */}
+        <ShowSession />
       </PageContainer>
     </Page>
   )

@@ -5,9 +5,11 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { /* useRouter, */ useSearchParams } from 'next/navigation'
 // import Link from 'next/link'
-//# import { signIn /* , getSession */ } from 'next-auth/react'
+import { signIn /* , getSession */ } from 'next-auth/react'
 
-import { DEFAULT_LOGIN_REDIRECT, publicRoutes } from 'routes' // i.e., '/user'
+import { useAppContextSelector } from '@/contexts'
+
+import { DEFAULT_LOGIN_REDIRECT } from 'routes'
 import { login } from '../actions'
 import { Button, Input } from '@/components'
 
@@ -17,16 +19,129 @@ import { Button, Input } from '@/components'
 
 export const LoginForm = () => {
   const router = useRouter()
+  const setSessionKey = useAppContextSelector('setSessionKey')
   const searchParams = useSearchParams()
+
   const error = searchParams?.get('error')
   const errorCode = searchParams?.get('code')
   const callbackUrl = searchParams?.get('callbackUrl')
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false) //# Change to status, setStatus
+  const [loading, setLoading] = useState(false)
 
-  const isPublicRoute = publicRoutes.includes(callbackUrl || '')
+  /* ======================
+  handleCredentialsLogin()
+  ====================== */
+  ///////////////////////////////////////////////////////////////////////////
+  //
+  // SessionProvider Syncing Issue: https://github.com/nextauthjs/next-auth/issues/9504
+  //
+  // Moving the SessionProvider to (root)/template.tsx will work for everything inside of page.tsx files.
+  // However, the Sidebar also needs access to the SessionProvider, so we actually need to move the all
+  // Sidebar logic into the template.tsx file.
+  //
+  //   'use client'
+  //   import { SessionProvider } from '@/contexts'
+  //
+  //   export default function SessionLayout({ children }: Readonly<{ children: React.ReactNode}>) {
+  //     return (
+  //       <SessionProvider>
+  //         <SidebarProvider>
+  //           ...
+  //         </SidebarProvider>
+  //       </SessionProvider>
+  //     )
+  //   }
+  //
+  //   This works because the SessionProvider is remounted on every page change.
+  //   Of course, this means that you MUST change pages to see the client-side
+  //   session update. That's not ideal. Presumably, when the SessionProvider
+  //   mounts, it makes an API call to '/api/auth/session'. Consequently, this is
+  //   actually more network traffic than simply using getSession() here (which works):
+  //
+  //     const _session = await getSession().
+  //
+  // However, a better solution than getSession() is to use sessionKey state form AppContext
+  // to force a remount.
+  //
+  // Alternatively, If you're going to use client-side session logic, you could avoid all these
+  // issues simply by sticking to ONLY using client-side signIn() and signOut() functions.
+  // Signing in from the client syncs to the SessionProvider whereas signing in on the server does not.
+  //
+  ///////////////////////////////////////////////////////////////////////////
+
+  const handleCredentialsLogin = async (e: any) => {
+    e.preventDefault()
+    setLoading(true)
+    try {
+      const res = await login({ email, password })
+
+      if (res.success === false) {
+        if (typeof res.code === 'string' && res.code === 'email_unverified') {
+          toast.error('Make sure to verify your email before logging in.', {
+            // duration: Infinity
+          })
+        } else if (typeof res.message === 'string') {
+          toast.error(res.message, {
+            // duration: Infinity
+          })
+        }
+
+        return
+      }
+
+      toast.success('Login success.')
+
+      setSessionKey((v) => v + 1)
+      router.replace(callbackUrl ? callbackUrl : DEFAULT_LOGIN_REDIRECT)
+    } catch {
+      toast.error('Unable to log in.')
+    } finally {
+      setLoading(false)
+      setEmail('')
+      setPassword('')
+    }
+  }
+
+  /* ======================
+
+  ====================== */
+
+  const _handleCredentialsLogin = async (e: any) => {
+    e.preventDefault()
+    setLoading(true)
+
+    try {
+      // https://authjs.dev/reference/nextjs/react#signin
+      await signIn('credentials', {
+        callbackUrl: callbackUrl ? callbackUrl : DEFAULT_LOGIN_REDIRECT,
+        email,
+        password
+        ///////////////////////////////////////////////////////////////////////////
+        //
+        // ⚠️ The client-side signIn() will automatically redirect to callbackUrl.
+        // redirect: false could be useful if you want to run the toast notification
+        // prior to redirecting. However, there's a big gotcha when using redirect: false.
+        // If the login attempt fails, NextAuth will not reload the page and
+        // not populate the URL with error or code params:
+        //
+        //   /login?error=CredentialsSignin&code=email_unverified
+        //
+        ///////////////////////////////////////////////////////////////////////////
+        // ❌ redirect: false
+      })
+
+      // ❌ toast.success('Login success.')
+      // ❌ router.replace(callbackUrl ? callbackUrl : DEFAULT_LOGIN_REDIRECT)
+    } catch {
+      toast.error('Unable to log in.')
+    } finally {
+      setLoading(false)
+      setEmail('')
+      setPassword('')
+    }
+  }
 
   /* ======================
         useEffect()
@@ -34,12 +149,6 @@ export const LoginForm = () => {
   // This useEffect checks for a URL search parameter of 'error' when the component mounts.
 
   useEffect(() => {
-    //# Do we need this???
-    // if (firstRenderRef.current !== true) {
-    //   return
-    // }
-    // firstRenderRef.current = false
-
     ///////////////////////////////////////////////////////////////////////////
     //
     // This error could result from a user having initially registered through the
@@ -71,176 +180,25 @@ export const LoginForm = () => {
     // '/api/auth/signin?error=OAuthAccountNotLinked' page.
     //
     ///////////////////////////////////////////////////////////////////////////
+
     if (error && error === 'OAuthAccountNotLinked') {
       toast.error(
-        'To confirm your identity, sign in with the same account you used originally.',
+        'To confirm your identity, sign in with the same account you used originally.'
         // 'That email is already being used in conjunction with a different provider.',
-        {
-          duration: Infinity
-        }
       )
       return
     }
 
     // ⚠️ Comes from custom UnverifiedEmailError
     if (error && errorCode === 'email_unverified') {
-      toast.error('Make sure to verify your email before logging in.', {
-        duration: Infinity
-      })
+      toast.error('Make sure to verify your email before logging in.')
       return
     }
 
     if (error) {
-      toast.error('Unable to log in. (1)', {
-        duration: Infinity
-      })
+      toast.error('Unable to log in. (1)')
     }
   }, [error, errorCode])
-
-  /* ======================
-  handleCredentialsLogin()
-  ====================== */
-  ///////////////////////////////////////////////////////////////////////////
-  //
-  // https://github.com/AntonioErdeljac/next-auth-v5-advanced-guide/blob/master/actions/login.ts
-  // Initially, I had a login() server action that was triggered here. It was based on
-  // the following tutorial. It ran a bunch of checks then called the server-side signIn()
-  // function from 'auth'. When a user logs out the session becomes null and status 'unauthenticate'.
-  //
-  // However, when the next user logs in, the session is not updated. Conversely, if you use the
-  // client-side signIn(), it always works just fine. In other words, signing in from the client
-  // syncs to the SessionProvider whereas signing in on the server does not.
-  //
-  //    https://github.com/nextauthjs/next-auth/issues/9504
-  //
-  // Note: the Credentials authorize() no longer supports returning custom errors when throwing
-  // an error instead of returning null. This creates a problem because we can no longer provide
-  // meaningful error messages to a user when their login attempt fails.
-  //
-  //   https://github.com/nextauthjs/next-auth/pull/9801
-  //   https://github.com/nextauthjs/next-auth/discussions/8999
-  //
-  // Update: their is now a way to modify the code:
-  // https://github.com/nextauthjs/next-auth/issues/9099
-  //
-  ///////////////////////////////////////////////////////////////////////////
-
-  //! This still doesn't work!
-  // const handleCredentialsLogin = async (e: any) => {
-  //   e.preventDefault()
-  //   setLoading(true)
-  //   try {
-  //     const res = await login({ email, password })
-
-  //     if (res.success === false) {
-  //       toast.error(res.message, {
-  //         autoClose: false
-  //       })
-  //       return
-  //     }
-  //     ///////////////////////////////////////////////////////////////////////////
-  //     //
-  //     // The client-side signIn() will refresh the useSession hook and its data.
-  //     // Without this call, the session will be updated but won't directly trigger the changes.
-  //     // Cosequently, we seem to need to do this.
-  //     //
-  //     // Note also that calling session.update() here won't work because the
-  //     // session is null. session.update() will return early if it detects a null session.
-  //     // await update()
-  //     //
-  //     ///////////////////////////////////////////////////////////////////////////
-  //     // const _session = await getSession() // This actually no longer works.
-
-  //     toast.success('Login success.')
-
-  //     router.replace(
-  //       callbackUrl && !isPublicRoute ? callbackUrl : DEFAULT_LOGIN_REDIRECT
-  //     )
-  //   } catch {
-  //     toast.error('Unable to log in.', {
-  //       autoClose: false
-  //     })
-  //   } finally {
-  //     setLoading(false)
-  //     setEmail('')
-  //     setPassword('')
-  //   }
-  // }
-
-  //# This is a temporary dummy server action.
-  const handleCredentialsLogin = async (e: any) => {
-    e.preventDefault()
-    setLoading(true)
-    try {
-      const res = await login({ email, password })
-
-      if (res.success === false && typeof res.message === 'string') {
-        //! Temporary...
-        console.log('originalMessage', res.originalMessage)
-        console.log('message', res.message)
-        toast.error(res.message, {
-          duration: Infinity
-        })
-        return
-      }
-
-      toast.success('Login success.')
-
-      //^ Not 100% sure why I was using !isPublicRoute here...
-      //^ Maybe it had to do with publicRoutes creeping into the callbackUrl when logging out.
-      //^ This may have been fixd by the following:
-      // if (nextUrl.search) {
-      //   if (nextUrl.search.includes('logout=true')) {
-      //     return Response.redirect(new URL(`/login`, nextUrl))
-      //   }
-      // }
-      //^ However, logout=true is also not yet being set on logout.
-
-      router.replace(
-        callbackUrl && !isPublicRoute ? callbackUrl : DEFAULT_LOGIN_REDIRECT
-      )
-    } catch {
-      toast.error('Unable to log in.', {
-        // duration: Infinity
-      })
-    } finally {
-      setLoading(false)
-      setEmail('')
-      setPassword('')
-    }
-  }
-
-  //* This works
-  // const handleCredentialsLogin = async (e: any) => {
-  //   e.preventDefault()
-
-  //   setLoading(true)
-  //   try {
-  //     //# Using the client-side signIn() / signOut functions are a solution,
-  //     //# but at some point we should try reimplementing the server side versions
-  //     //# in order to try to figure out why they don't sync.
-  //     //#
-  //     //# Also, I'm not sure if the client-side version checks emailVerified.
-  //     // https://authjs.dev/reference/nextjs/react#signin
-  //     await signIn('credentials', {
-  //       // callbackUrl: DEFAULT_LOGIN_REDIRECT
-  //       callbackUrl: callbackUrl ? callbackUrl : '/', //! DEFAULT_LOGIN_REDIRECT, // is actually '/user'
-  //       email,
-  //       password
-  //       // redirect: false
-  //     })
-
-  //     // toast.success('Login success.')
-  //   } catch {
-  //     toast.error('Unable to log in.', {
-  //       duration: Infinity
-  //     })
-  //   } finally {
-  //     setLoading(false)
-  //     setEmail('')
-  //     setPassword('')
-  //   }
-  // }
 
   /* ======================
           return

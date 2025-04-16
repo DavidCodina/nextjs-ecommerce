@@ -2,12 +2,15 @@
 
 // import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { signOut, useSession } from 'next-auth/react' //* New...
 import {
   // Calendar,
   Home,
   Info,
   ShoppingCart,
-  UserIcon
+  UserIcon,
+  LogIn,
+  LogOut
   // Inbox,
   // Search,
   // Settings,
@@ -41,6 +44,8 @@ import {
   useSidebar
 } from '../Sidebar'
 
+import { ThemeToggle } from '@/components'
+
 // import {
 //   Collapsible,
 //   CollapsibleTrigger,
@@ -53,8 +58,6 @@ import {
 //   DropdownMenuContent,
 //   DropdownMenuItem
 // } from './dropdown-menu'
-
-import { ThemeToggle } from 'components'
 
 import {
   SIDEBAR_WIDTH,
@@ -69,6 +72,12 @@ const items = [
   },
 
   {
+    title: 'User',
+    url: '/user',
+    icon: UserIcon
+  },
+
+  {
     title: 'Info',
     url: '/about',
     icon: Info
@@ -80,8 +89,8 @@ const items = [
   },
   {
     title: 'Sign In',
-    url: '/sign-in',
-    icon: UserIcon
+    url: '/login',
+    icon: LogIn
   }
 ]
 
@@ -93,6 +102,9 @@ import { cn } from '@/utils'
 ======================================================================== */
 
 export const AppSidebar = () => {
+  const { data: session } = useSession()
+  const _isAdmin = session?.user?.role === 'admin'
+
   const { open, openMobile, isMobile, collapsible, variant /*, side */ } =
     useSidebar()
   const isOpen = (open && !isMobile) || (openMobile && isMobile)
@@ -117,24 +129,56 @@ export const AppSidebar = () => {
       <SidebarGroup>
         <SidebarGroupContent>
           <SidebarMenu className='gap-2'>
-            {items.map((item) => (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton
-                  asChild
-                  // Use the isActive prop to mark a menu item as active.
-                  // This essentially changes the styles in the component by setting this: data-active={isActive}
-                  // Then using the data-[active=true]: modifier. The current styles are very subtle.
-                  // Right now it doesn't make any sense to implement isActive because we're mapping over the
-                  // dummy items, but eventually, we can set it.
-                  tooltip={item.title}
-                >
-                  <Link href={item.url} className='text-[inherit]'>
-                    <item.icon />
-                    <span>{item.title}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
+            {items.map((item) => {
+              if (session && item.title === 'Sign In') {
+                return (
+                  <SidebarMenuItem key='Sign Out'>
+                    <SidebarMenuButton asChild tooltip='Sign Out'>
+                      <button
+                        onClick={() => {
+                          const searchParams = new URLSearchParams(
+                            window.location.search
+                          )
+                          // Used to condiationally opt-out of callbackUrl in middleware.
+                          searchParams.set('logout', 'true')
+                          // Use replaceState to update the URL without adding to the history stack
+                          window.history.replaceState(
+                            null,
+                            '',
+                            `?${searchParams.toString()}`
+                          )
+
+                          signOut({ redirect: true })
+                        }}
+                        className='text-[inherit]'
+                      >
+                        <LogOut />
+                        <span>Sign Out</span>
+                      </button>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              }
+
+              return (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    // Use the isActive prop to mark a menu item as active.
+                    // This essentially changes the styles in the component by setting this: data-active={isActive}
+                    // Then using the data-[active=true]: modifier. The current styles are very subtle.
+                    // Right now it doesn't make any sense to implement isActive because we're mapping over the
+                    // dummy items, but eventually, we can set it.
+                    tooltip={item.title}
+                  >
+                    <Link href={item.url} className='text-[inherit]'>
+                      <item.icon />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )
+            })}
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>
