@@ -1,19 +1,17 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { Page, PageContainer, Title } from '@/components'
+import { Page, PageContainer, Title, Button } from '@/components'
 
 export const metadata: Metadata = {
   title: 'Forbidden',
   description: 'The 403 Page'
 }
 
-export const dynamic = 'force-dynamic'
-
 /* ========================================================================
                                 PageForbidden
 ======================================================================== */
 // 401 Unauthorized is used when the request has not been applied because it
-// lacks valid authentication credentials for the target resource. It’s a signal
+// lacks valid authentication credentials for the target resource. It's a signal
 // that the user might be able to access the resource if they provide proper credentials.
 // On the other hand, 403 Forbidden is used when the user is authenticated but does not
 // have the necessary permissions to access the resource. This status code indicates
@@ -39,14 +37,11 @@ const PageForbidden = () => {
         </Title>
 
         <div className='mb-8 flex justify-center gap-4'>
-          <Link
-            href='/'
-            style={{ position: 'absolute', top: 15, left: 15 }}
-            className='btn-red btn-sm'
-            replace
-          >
-            Go Home
-          </Link>
+          <Button asChild size='sm' variant='destructive'>
+            <Link href='/' replace>
+              Go Home
+            </Link>
+          </Button>
         </div>
 
         <div className='mx-auto' style={{ width: '40%' }}>

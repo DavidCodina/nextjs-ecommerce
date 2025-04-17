@@ -41,6 +41,7 @@
 
 export const publicRoutes = [
   '/',
+  '/about',
   '/forbidden',
 
   // Why is this in publicRoutes? We want the user to be able to change their email
@@ -49,10 +50,11 @@ export const publicRoutes = [
   // already logged in (i.e., authenticated) then they would be redirected to
   // DEFAULT_LOGIN_REDIRECT. Why? Because that's how middleware.ts is set up.
   // Consequently, we actually want '/auth/new-verification' to be in publicRoutes.
-  '/new-verification'
+  '/new-verification',
 
   // Add public api routes here also:
-  //'/api/my-public-route'
+  '/api/hello',
+  '/api/param-demo'
 ]
 
 /** An array of routes that are used for authentication

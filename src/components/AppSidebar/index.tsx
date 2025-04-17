@@ -1,16 +1,18 @@
 'use client'
 
-// import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { signOut, useSession } from 'next-auth/react' //* New...
+import { signOut } from 'next-auth/react' //* New...
 import {
-  // Calendar,
   Home,
-  Info,
-  ShoppingCart,
+  //# ShoppingCart,
   UserIcon,
+  UserPlus,
+  UserCog,
   LogIn,
-  LogOut
+  LogOut,
+  Info
+  // Calendar,
+
   // Inbox,
   // Search,
   // Settings,
@@ -44,7 +46,7 @@ import {
   useSidebar
 } from '../Sidebar'
 
-import { ThemeToggle } from '@/components'
+import { SignedIn, SignedOut, AdminOnly, ThemeToggle } from '@/components'
 
 // import {
 //   Collapsible,
@@ -64,36 +66,6 @@ import {
   SIDEBAR_WIDTH_MOBILE
 } from '../Sidebar/SidebarConstants'
 
-const items = [
-  {
-    title: 'Home',
-    url: '/',
-    icon: Home
-  },
-
-  {
-    title: 'User',
-    url: '/user',
-    icon: UserIcon
-  },
-
-  {
-    title: 'Info',
-    url: '/about',
-    icon: Info
-  },
-  {
-    title: 'Cart',
-    url: '/cart',
-    icon: ShoppingCart
-  },
-  {
-    title: 'Sign In',
-    url: '/login',
-    icon: LogIn
-  }
-]
-
 import { SIDEBAR_ZINDEX_CLASS } from 'components/component-constants'
 import { cn } from '@/utils'
 
@@ -102,9 +74,6 @@ import { cn } from '@/utils'
 ======================================================================== */
 
 export const AppSidebar = () => {
-  const { data: session } = useSession()
-  const _isAdmin = session?.user?.role === 'admin'
-
   const { open, openMobile, isMobile, collapsible, variant /*, side */ } =
     useSidebar()
   const isOpen = (open && !isMobile) || (openMobile && isMobile)
@@ -121,64 +90,115 @@ export const AppSidebar = () => {
   const floatingOffset = '16px'
 
   /* ======================
-      renderNavLinkGroup()
+     renderNavLinkGroup()
   ====================== */
+  // Use the isActive prop to mark a menu item as active.
+  // This essentially changes the styles in the component by setting this: data-active={isActive}
+  // Then using the data-[active=true]: modifier. The current styles are very subtle.
+  // Right now it doesn't make any sense to implement isActive because we're mapping over the
+  // dummy items, but eventually, we can set it.
 
   const renderNavLinkGroup = () => {
     return (
       <SidebarGroup>
         <SidebarGroupContent>
           <SidebarMenu className='gap-2'>
-            {items.map((item) => {
-              if (session && item.title === 'Sign In') {
-                return (
-                  <SidebarMenuItem key='Sign Out'>
-                    <SidebarMenuButton asChild tooltip='Sign Out'>
-                      <button
-                        onClick={() => {
-                          const searchParams = new URLSearchParams(
-                            window.location.search
-                          )
-                          // Used to condiationally opt-out of callbackUrl in middleware.
-                          searchParams.set('logout', 'true')
-                          // Use replaceState to update the URL without adding to the history stack
-                          window.history.replaceState(
-                            null,
-                            '',
-                            `?${searchParams.toString()}`
-                          )
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip='Home'>
+                <Link href='/' className='text-[inherit]'>
+                  <Home />
+                  <span>Home</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
 
-                          signOut({ redirect: true })
-                        }}
-                        className='text-[inherit]'
-                      >
-                        <LogOut />
-                        <span>Sign Out</span>
-                      </button>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )
-              }
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip='About'>
+                <Link href='/about' className='text-[inherit]'>
+                  <Info />
+                  <span>About</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
 
-              return (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    // Use the isActive prop to mark a menu item as active.
-                    // This essentially changes the styles in the component by setting this: data-active={isActive}
-                    // Then using the data-[active=true]: modifier. The current styles are very subtle.
-                    // Right now it doesn't make any sense to implement isActive because we're mapping over the
-                    // dummy items, but eventually, we can set it.
-                    tooltip={item.title}
+            <AdminOnly>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip='Admin'>
+                  <Link href='/admin' className='text-[inherit]'>
+                    <UserCog />
+                    <span>Admin</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </AdminOnly>
+
+            <SignedIn>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip='User'>
+                  <Link href='/user' className='text-[inherit]'>
+                    <UserIcon />
+                    <span>User</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip='Sign Out'>
+                  <button
+                    onClick={() => {
+                      const searchParams = new URLSearchParams(
+                        window.location.search
+                      )
+                      // Used to condiationally opt-out of callbackUrl in middleware.
+                      searchParams.set('logout', 'true')
+                      // Use replaceState to update the URL without adding to the history stack
+                      window.history.replaceState(
+                        null,
+                        '',
+                        `?${searchParams.toString()}`
+                      )
+
+                      ///////////////////////////////////////////////////////////////////////////
+                      //
+                      // Using the client-side signOut() here is the best solution because
+                      // It doesn't require us to implement a server action. Moreover, if we
+                      // singed out using the server-side signOut(), then on success, we would NEED to
+                      // call setSessionKey((v) => v + 1) in order to force remount the SessionProvider
+                      // to keep it in sync. Ultimately, we may need to switch to a server-side signOut(),
+                      // but for now this works...
+                      //
+                      // See Code With Antonio at 5:59:00 for mention of server-side signOut(): https://www.youtube.com/watch?v=1MTyCvS05V4&t=1s
+                      //
+                      ///////////////////////////////////////////////////////////////////////////
+                      signOut({ redirect: true })
+                    }}
+                    className='text-[inherit]'
                   >
-                    <Link href={item.url} className='text-[inherit]'>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )
-            })}
+                    <LogOut />
+                    <span>Sign Out</span>
+                  </button>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SignedIn>
+
+            <SignedOut>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip='Sign In'>
+                  <Link href='/login' className='text-[inherit]'>
+                    <LogIn />
+                    <span>Sign In</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip='Sign Up'>
+                  <Link href='/register' className='text-[inherit]'>
+                    <UserPlus />
+                    <span>Sign Up</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SignedOut>
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>

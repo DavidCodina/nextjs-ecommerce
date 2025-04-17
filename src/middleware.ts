@@ -27,8 +27,9 @@
 //
 // Gotcha: middleware runs before the next-auth callbacks, so
 // we won't have access to the extended user. This means we would
-// have to interact with the database here in order to get roles,
-// and do admin protection logic. This seems like a bad idea.
+// have to interact with the database here in order to get role,
+// and do admin protection logic. However, you can't interact with
+// the database in middleware.
 //
 // The alternative would be to create a layout.tsx that wraps all
 // admin pages, and performs the necessary roles-based authentication.

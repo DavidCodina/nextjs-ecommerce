@@ -4,6 +4,8 @@ import { ProductList } from '@/components/product/ProductList'
 import { getLatestProducts } from '@/lib/actions/product.actions'
 // ❌ import sampleData from '@/db/sample-data'
 
+//# Learn more about Prisma...
+
 /* ========================================================================
 
 ======================================================================== */
@@ -46,8 +48,20 @@ import { getLatestProducts } from '@/lib/actions/product.actions'
 // NextAuth:
 //
 //   Began watching Code With Antonio tutorial: https://www.youtube.com/watch?v=1MTyCvS05V4&t=1s
-//   It doesn't really get interesting until 1:40:00.
-//   I then watched up to 3:20:30, but temporarily skipped sections after that.
+//     It doesn't really get interesting until 1:40:00.
+//     I then watched up to 3:480:00, but temporarily skipped sections after that.
+//     Watched 5:55:00 - 6:47:30.
+//     # Continue at 6:47:30 for email and/or password updates.
+//
+//# Clean up the register action.
+//# Clean up the login action.
+//#
+//# Consider switching to a local postgres instance for dev.
+//#
+//# Update to Next.js 15.3. It looks like useLinkStatus() hook is the new way to
+//# look at pending state for page transitions.
+//# https://nextjs.org/docs/app/api-reference/functions/use-link-status
+//# https://nextjs.org/docs/app/api-reference/components/link#onnavigate
 //
 ///////////////////////////////////////////////////////////////////////////
 

@@ -23,7 +23,78 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
   // This stays in auth.ts
   session: {
-    strategy: 'jwt' as const,
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    // Choose how you want to save the user session.
+    // The default is `"jwt"`, an encrypted JWT stored in the session cookie.
+    // If you use an `adapter` however, we default it to `"database"` instead.
+    // You can still force a JWT session by explicitly defining `"jwt"`.
+    // When using `"database"`, the session cookie will only contain a `sessionToken` value,
+    // which is used to look up the session in the database.
+    //
+    // https://authjs.dev/guides/upgrade-to-v5#edge-compatibility
+    // NextAuth.js supports two session strategies. When you are using an adapter, you can choose
+    // to save the session data into a database. Unless your database and its adapter is compatible
+    // with the Edge runtime/infrastructure, you will not be able to use a "database" session strategy.
+    //
+    // Note that the above documentation link goes on to explain how you can use the database strategy
+    // even if your ORM does not support the Edge runtime. I think this means I should be able to
+    // switch to "database".
+    // UnsupportedStrategy: Signing in with credentials only supported if JWT strategy is enabled
+    //
+    //# At 19:30 of Coding In Flow: https://www.youtube.com/watch?v=bMYZSi_LZ2w
+    //# He goes over why jwt is probably not as good as sessions.
+    //# So in a future version, we may want to switch to the session strategy.
+    //# See also Randall Degges videos on youtube.
+    //
+    // Note: Even when using Google OAuth, NextAuth's jwt() callback still runs.
+    // NextAuth's JWT strategy is independent of the authentication
+    // provider. When you're using NextAuth with OAuth providers like Google,
+    // NextAuth still utilizes the JWT callback to store session information.
+    //
+    ///////////////////////////////////////////////////////////////////////////
+    strategy: 'jwt' as const, //  "jwt" | "database" | undefined;
+
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    // Seconds - How long until an idle session expires and is no longer valid.
+    // It defaults to 30 days: 30 * 24 * 60 * 60,
+    //
+    // AI Prompt: I set maxAge to 60 (i.e., one minute), but it keeps changing. In other words, every time I
+    // get the session from the server, the new expiration is one minute from now. This is unintended.
+    // Why is this happening?
+    // This behavior is actually expected and is part of how NextAuth.js manages sessions. When you set session.maxAge to 60 seconds,
+    // it means that the session will be valid for 60 seconds from the time of the last request1.
+    //
+    // Every time a request is made to the server within this 60-second window, the session expiration time is reset to 60 seconds
+    // from that request time2. This is why you’re seeing the session expiration time always being one minute from the current time,
+    // as long as requests are being made within each minute2.
+    //
+    // This design helps keep sessions active for users who are actively interacting with the application, while allowing sessions to expire
+    // quickly once the user becomes inactive2. If you want the session to last for a fixed duration regardless of user activity, you would need
+    // to implement a different session management strategy. However, please note that allowing sessions to remain valid without activity can
+    // have security implications. It’s generally recommended to let sessions expire after a period of inactivity to reduce the risk of session hijacking2.
+    //
+    // If you want to change this behavior, you might need to modify your session management strategy or consider using a different library that supports
+    // fixed-duration sessions. Always remember to consider the security implications of any changes you make to session management.
+    //
+    // Todo: Read these
+    //
+    // 1. https://stackoverflow.com/questions/67490767/how-to-configure-clientmaxage-keepalive-with-refresh-tokens-next-auth
+    // 2. https://stackoverflow.com/questions/52766797/express-session-cookie-maxage-property-refreshes-on-request
+    // 3. https://stackoverflow.com/questions/77073000/how-to-set-session-maxage-dynamically-in-nextjs-using-next-auth
+    //
+    // If you want the session to expire regardless of activity, you would need to implement that logic yourself,
+    // as it’s not a built-in feature of NextAuth.js1. For example, you could store a timestamp in the session when it’s
+    // created, and then check this timestamp against the current time on each request. If the difference is greater than
+    // your desired max age, you could invalidate the session. However, this would require a good understanding of how
+    // sessions work in NextAuth.js and careful testing to ensure it behaves as expected.
+    //
+    // Refetch Interval: The refetchInterval option in the SessionProvider could also affect session expiration.
+    // As per the NextAuth.js documentation, the value for refetchInterval should always be lower than the value of
+    // the session maxAge session option1.
+    //
+    ///////////////////////////////////////////////////////////////////////////
     maxAge: maxAge
   },
 
@@ -31,12 +102,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     ...configProviders,
 
     // This stays in auth.ts because it implements database access.
+    // https://authjs.dev/reference/core/providers/credentials
+    // https://authjs.dev/getting-started/providers/credentials-tutorial
     CredentialsProvider({
       name: 'credentials',
       // Brad does this. I don't think it's necessary.
       // credentials: {email: { type: 'email' },password: { type: 'password' }},
       async authorize({ email, password }) {
         ///////////////////////////////////////////////////////////////////////////
+        //
+        // Any logic that exists in a login server action must be duplicated here.
+        // Why? Because someone could be accessing the signIn URL directly:
+        // "signinUrl": "http://localhost:3000/api/auth/signin/credentials"
+        // This point is emphasized here at 2:38:45 :
+        // https://www.youtube.com/watch?v=1MTyCvS05V4&t=1s
+        //
+        /////////////////////////
         //
         // What happens if the associated authorize() throws an error?
         // A CallbackRouteError is triggered. However, this error does not expose the
@@ -63,10 +144,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         //
         ///////////////////////////////////////////////////////////////////////////
 
-        //# I did this previously:
-        //# if (!email || !password) { throw new InvalidLoginError() }
-
         if (!email || !password) {
+          // Or do: throw new InvalidLoginError()
           throw new Error('Invalid credentials. (1)')
         }
 
@@ -95,6 +174,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         //   Having Prisma references in that module will cause errors in edge environments."
         //
         ///////////////////////////////////////////////////////////////////////////
+
         const user = await prisma.user.findFirst({
           where: {
             email: email
@@ -182,10 +262,93 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     // signIn --> jwt --> session
     // eslint-disable-next-line
     async signIn({ user, account, profile, email, credentials }) {
-      // Todo: Review what was done in the old version...
+      ///////////////////////////////////////////////////////////////////////////
+      //
+      // The very first time a user signs in with an OAuth provider, the user object will be limited:
+      //
+      //  {
+      //     id: '5c6284cf-1212-4707-8bbc-eccad881d832',
+      //     name: 'David Codina',
+      //     email: 'codinadavid970@gmail.com',
+      //     image: 'https://lh3.googleusercontent.com/a/ACg8ocIpUAcHyTlIZCXikgO-0LzbBidj5E8WAGfHH3t9ckNUDpHDSQ=s96-c'
+      //   }
+      //
+      // However, by the time control moves to the jwt() callback, the user object will have all data from
+      // the newly created user in the database.
+      //
+      // Subsequently, when signing in with OAuth providers like Google or GitHub, the user will contain
+      // the ENTIRE user object from the database.
+      //
+      //
+      // The default behavior for the OAuth
+      // providers seems to be that they internally get the user, so no need to call the
+      // database here. Everything you need should already be in the user object.
+      //
+      /////////////////////////
+      //
+      // This is the data returned from a google signIn:
+      //
+      //
+      //   user: {
+      //     id: 'd0ac6fac-acfa-4f3b-8c2a-4baea144a419',
+      //     name: 'David Codina',
+      //     email: 'codinadavid123@gmail.com',
+      //     emailVerified: null,
+      //     image: 'https://lh3.googleusercontent.com/a/ACg8ocIpUAcHyTlIZCXikgO-0LzbBidj5E8WAGfHH3t9ckNUDpHDSQ=s96-c',
+      //     password: null,
+      //     role: 'user',
+      //     address: null,
+      //     paymentMethod: null,
+      //     createdAt: 2025-04-16T22:47:36.675Z,
+      //     updatedAt: 2025-04-16T22:47:36.675Z
+      //   }
+      //   account: { access_token, expires_in, scope, token_type, id_token, expires_at, provider: 'google', type, providerAccountId }
+      //   profile: { sub, name, given_name (first), family_name (last), picture, iat, exp, etc. }
+      //   email: undefined
+      //   credentials: undefined
+      //
+      // Note that email is undefined. However, user.name and user.email are populated.
+      // Presumably, these are extracted from the profile object.
+      // The user.id is also very useful. It appears to be extracted from profile.sub
+      // For the moment, those are the main things that we want.
+      //
+      // From that data we can then check the database for a user that matches the email.
+      // If none is found, we want to create one. But actually, NextAuth will automatically,
+      // create a new user with that id, name, email, password, image, password, etc.
+      //
+      // This is not happening through the register() server action. It's actually a
+      // consequence of the PrismaAdapter.
+      //
+      //   1. User Authentication: When a user signs in for the first time using Google
+      //   (or any other OAuth provider), NextAuth.js handles the authentication process with the provider.
+      //
+      //   2. User Creation: If the user is authenticated successfully and is signing in for the first time,
+      //   the *Adapter comes into play. The adapter is responsible for creating a new user in the database.
+      //
+      //   3. Session Management: The *Adapter also manages sessions. When the same user logs in again, the adapter
+      //   fetches the user’s information from the database.
+      //
+      //   4. Linking OAuth Accounts: If users are logging in through OAuth providers (like Google), the adapter
+      //   links these OAuth accounts to a user account.
+      //
+      // The user object in the signIn callback can change over time in NextAuth.js.
+      // When a user registers for the first time using an OAuth provider like GitHub,
+      // the user object contains information provided by GitHub. This typically includes
+      // fields such as id, name, email, and image. After the initial registration, when the
+      // user signs back in, NextAuth.js retrieves the ENTIRE user object from your database.
+      // With a Credentials sign in, the user object is always whatever is returned from authorize().
+      //
+      // Learn more:
+      //
+      //   https://stackoverflow.com/questions/76678908/what-is-the-use-of-adapters-in-nextauth
+      //   https://stackoverflow.com/questions/76771833/how-to-use-prisma-adapter-next-auth-in-route-handlers
+      //
+      ///////////////////////////////////////////////////////////////////////////
+
       return true
     },
-    // Runs BEFORE session callback.
+
+    // Runs BEFORE session callback: signIn --> jwt --> session
     async jwt(params) {
       const { token, user /* , session, account, profile, trigger, */ } = params
 
@@ -275,7 +438,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return token
     },
 
-    // Runs AFTER jwt callback.
+    // Runs AFTER jwt callback: signIn --> jwt --> session
     async session(params) {
       const { session, token /* user, trigger, */ } = params
 
@@ -320,7 +483,37 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ...otherConfigProperties,
 
   // AI: These should remain in auth.ts. Events often involve database interactions
-  //  or other backend logic that may not be edge-compatible, so keeping them in auth.ts
+  // or other backend logic that may not be edge-compatible, so keeping them in auth.ts
   // ensures they run in a Node.js environment.
-  events: {}
+
+  // Account linking is discussed in Code With Antonio at 3:33:30.
+  // https://www.youtube.com/watch?v=1MTyCvS05V4&t=1s
+
+  // This is used specifically for users that register through the Credentials provider.
+  // We want to verify them to protect against spam emails.
+  events: {
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    // See Code With Antonio at 3:34:15 : https://www.youtube.com/watch?v=1MTyCvS05V4&t=1s
+    //
+    // This event handler will fire when a user registers for the FIRST TIME using an OAuth provider.
+    // It is not fired when a user registers through the Credentials provider:
+    //
+    //   "Sent when an account in a given provider is linked to a user in our user database. For example,
+    //   when a user signs up with Twitter or when an existing user links their Google account."
+    //
+    // OAuth providers like Google and GitHub already do email verification on their own, so we don't
+    // need to verify again. Instead, just add a new Date().
+    //
+    ///////////////////////////////////////////////////////////////////////////
+
+    async linkAccount(message) {
+      const { user } = message
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { emailVerified: new Date() }
+      })
+    }
+  }
 })
