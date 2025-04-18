@@ -2,6 +2,20 @@ import type { NextAuthConfig } from 'next-auth'
 import Github from 'next-auth/providers/github'
 import Google from 'next-auth/providers/google'
 
+const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID
+const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET
+
+if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET) {
+  throw new Error('GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET must be set.')
+}
+
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET
+
+if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+  throw new Error('GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be set.')
+}
+
 /* ========================================================================
 
 ======================================================================== */
@@ -52,20 +66,15 @@ export const authConfig = {
     //   http://localhost:3000/api/auth/providers
     //
     // ⚠️ This will absolutely not work if you push it to production.
-    // In practice, we would actually want to create two separate OAuth GitHub applications.
-    // One for development and one for production because you can only have one callbackUrl per application.
+    // In practice, we would actually want to create two separate OAuth GitHub applications:
+    // one for development and one for production because you can only have one callbackUrl per application.
     // Jack Herrington discusses this at 4:25 here: https://www.youtube.com/watch?v=md65iBX5Gxg
     // Some other OAuth providers may allow you to have more than one callbackUrl.
     //
-    //# Note: When you sign in with GitHub, it will add an associated account document.
-    //# It will also add a user. When using Prisma, manually deleting a user from Prisma studio would cause
-    //# a deletion cascade that would also remove the associated account. However, when
-    //# using Mongoose this does NOT happen. This means we need to come up with a solution for this.
-    //
     ///////////////////////////////////////////////////////////////////////////
     Github({
-      clientId: process.env.GITHUB_CLIENT_ID,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET
+      clientId: GITHUB_CLIENT_ID,
+      clientSecret: GITHUB_CLIENT_SECRET
     }),
 
     ///////////////////////////////////////////////////////////////////////////
@@ -98,17 +107,13 @@ export const authConfig = {
     //   GOOGLE_CLIENT_ID=...
     //   GOOGLE_CLIENT_SECRET=...
     //
-    //# How would you handle name/email updates if the user was logged in through
-    //# Google provider?
-    //
-    //# Test what happens if you login with credentials. Then login with Google
-    //# such that they're both using same email.
+    // ⚠️ How would you handle name/email updates if the user was logged in through Google provider?
     //
     ///////////////////////////////////////////////////////////////////////////
 
     Google({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET
+      clientId: GOOGLE_CLIENT_ID,
+      clientSecret: GOOGLE_CLIENT_SECRET
       // profile: (profile, tokens) => { return profile }
     })
   ]

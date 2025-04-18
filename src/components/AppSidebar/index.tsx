@@ -9,8 +9,8 @@ import {
   UserPlus,
   UserCog,
   LogIn,
-  LogOut,
-  Info
+  LogOut
+  // Info
   // Calendar,
 
   // Inbox,
@@ -112,14 +112,14 @@ export const AppSidebar = () => {
               </SidebarMenuButton>
             </SidebarMenuItem>
 
-            <SidebarMenuItem>
+            {/* <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip='About'>
-                <Link href='/about' className='text-[inherit]'>
+                <Link href='/about' className='text-[inherit]' prefetch={false}>
                   <Info />
                   <span>About</span>
                 </Link>
               </SidebarMenuButton>
-            </SidebarMenuItem>
+            </SidebarMenuItem> */}
 
             <AdminOnly>
               <SidebarMenuItem>

@@ -6,8 +6,9 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
 import { Button, Input } from '@/components'
-import { signUpDefaultValues } from '@/lib/constants'
 import { signUpUser } from '@/lib/actions/user.actions'
+
+//! import { signUpDefaultValues } from '@/lib/constants'
 
 /* ========================================================================
 
@@ -60,7 +61,7 @@ export const SignUpForm = () => {
         name='name'
         type='text'
         autoComplete='name'
-        defaultValue={signUpDefaultValues.name}
+        //! defaultValue={signUpDefaultValues.name}
       />
 
       <Input
@@ -70,7 +71,7 @@ export const SignUpForm = () => {
         name='email'
         type='text'
         autoComplete='email'
-        defaultValue={signUpDefaultValues.email}
+        //! defaultValue={signUpDefaultValues.email}
       />
 
       <Input
@@ -81,7 +82,7 @@ export const SignUpForm = () => {
         type='password'
         required
         autoComplete='password'
-        defaultValue={signUpDefaultValues.password}
+        //! defaultValue={signUpDefaultValues.password}
       />
 
       <Input
@@ -92,7 +93,7 @@ export const SignUpForm = () => {
         type='password'
         required
         autoComplete='confirmPassword'
-        defaultValue={signUpDefaultValues.confirmPassword}
+        //! defaultValue={signUpDefaultValues.confirmPassword}
       />
 
       <SignUpButton />

@@ -4,8 +4,6 @@ import { ProductList } from '@/components/product/ProductList'
 import { getLatestProducts } from '@/lib/actions/product.actions'
 // ❌ import sampleData from '@/db/sample-data'
 
-//# Learn more about Prisma...
-
 /* ========================================================================
 
 ======================================================================== */
@@ -53,15 +51,24 @@ import { getLatestProducts } from '@/lib/actions/product.actions'
 //     Watched 5:55:00 - 6:47:30.
 //     # Continue at 6:47:30 for email and/or password updates.
 //
-//# Clean up the register action.
 //# Clean up the login action.
+//# Clean up the register action.
+//# Get rid of legacy sign-in and sign-up, but review them first.
+//# Remove unused actions from lib.
+//# Comment out logic for OAuth providers.
 //#
 //# Consider switching to a local postgres instance for dev.
+//# Try switching to regular bcryptjs and deploy to see if it works.
+//# Learn more about Prisma...
+//# Review LoginForm and RegisterForm - clean up if necessary.
 //#
-//# Update to Next.js 15.3. It looks like useLinkStatus() hook is the new way to
-//# look at pending state for page transitions.
-//# https://nextjs.org/docs/app/api-reference/functions/use-link-status
-//# https://nextjs.org/docs/app/api-reference/components/link#onnavigate
+//# Next Steps:
+//#
+//#   1. Create a separate Express/Prisma/Postgres project to practice Prisma.
+//#   2. Review Auth.js docs
+//#   3. Create a separate version of this for Auth.js folder.
+//#   4. Get back to the Traversy eCommerce tutorial using icloud email.
+//
 //
 ///////////////////////////////////////////////////////////////////////////
 

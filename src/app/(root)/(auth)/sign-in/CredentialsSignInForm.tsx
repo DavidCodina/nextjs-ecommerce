@@ -7,7 +7,6 @@ import { useSearchParams } from 'next/navigation'
 
 import { Button, Input } from '@/components'
 import { signInWithCredentials } from '@/lib/actions/user.actions'
-import { signInDefaultValues } from '@/lib/constants'
 
 /* ========================================================================
 
@@ -65,7 +64,7 @@ export const CredentialsSignInForm = () => {
         type='email'
         required
         autoComplete='email'
-        defaultValue={signInDefaultValues.email}
+        //! defaultValue={signInDefaultValues.email}
       />
 
       <Input
@@ -76,7 +75,7 @@ export const CredentialsSignInForm = () => {
         type='password'
         required
         autoComplete='password'
-        defaultValue={signInDefaultValues.password}
+        //! defaultValue={signInDefaultValues.password}
       />
 
       <SignInButton />

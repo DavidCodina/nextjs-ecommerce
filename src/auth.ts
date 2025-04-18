@@ -1,11 +1,10 @@
 import NextAuth from 'next-auth'
-import { PrismaAdapter } from '@auth/prisma-adapter'
-import { prisma } from '@/db/prisma'
-
-import { compare } from './lib/encrypt'
 import CredentialsProvider from 'next-auth/providers/credentials'
-import { authConfig } from '@/auth.config'
+import { PrismaAdapter } from '@auth/prisma-adapter'
 
+import { prisma } from '@/db/prisma'
+import { compare } from './lib/encrypt'
+import { authConfig } from '@/auth.config'
 // import { UnverifiedEmailError } from '@/CustomAuthErrors'
 
 export const maxAge = 30 * 24 * 60 * 60 // 30 days
@@ -26,10 +25,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     ///////////////////////////////////////////////////////////////////////////
     //
     // Choose how you want to save the user session.
-    // The default is `"jwt"`, an encrypted JWT stored in the session cookie.
-    // If you use an `adapter` however, we default it to `"database"` instead.
-    // You can still force a JWT session by explicitly defining `"jwt"`.
-    // When using `"database"`, the session cookie will only contain a `sessionToken` value,
+    // The default is "jwt", an encrypted JWT stored in the session cookie.
+    // If you use an `adapter` however, we default it to "database" instead.
+    // You can still force a JWT session by explicitly defining "jwt".
+    // When using "database", the session cookie will only contain a `sessionToken` value,
     // which is used to look up the session in the database.
     //
     // https://authjs.dev/guides/upgrade-to-v5#edge-compatibility
@@ -40,12 +39,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     // Note that the above documentation link goes on to explain how you can use the database strategy
     // even if your ORM does not support the Edge runtime. I think this means I should be able to
     // switch to "database".
-    // UnsupportedStrategy: Signing in with credentials only supported if JWT strategy is enabled
     //
-    //# At 19:30 of Coding In Flow: https://www.youtube.com/watch?v=bMYZSi_LZ2w
-    //# He goes over why jwt is probably not as good as sessions.
-    //# So in a future version, we may want to switch to the session strategy.
-    //# See also Randall Degges videos on youtube.
+    // UnsupportedStrategy: Signing in with credentials only supported if JWT strategy is enabled
     //
     // Note: Even when using Google OAuth, NextAuth's jwt() callback still runs.
     // NextAuth's JWT strategy is independent of the authentication
@@ -57,26 +52,27 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
     ///////////////////////////////////////////////////////////////////////////
     //
-    // Seconds - How long until an idle session expires and is no longer valid.
+    //  maxAge: How long in seconds until an idle session expires and is no longer valid.
     // It defaults to 30 days: 30 * 24 * 60 * 60,
     //
     // AI Prompt: I set maxAge to 60 (i.e., one minute), but it keeps changing. In other words, every time I
     // get the session from the server, the new expiration is one minute from now. This is unintended.
     // Why is this happening?
-    // This behavior is actually expected and is part of how NextAuth.js manages sessions. When you set session.maxAge to 60 seconds,
-    // it means that the session will be valid for 60 seconds from the time of the last request1.
     //
-    // Every time a request is made to the server within this 60-second window, the session expiration time is reset to 60 seconds
-    // from that request time2. This is why you’re seeing the session expiration time always being one minute from the current time,
-    // as long as requests are being made within each minute2.
+    //   This behavior is actually expected and is part of how NextAuth.js manages sessions. When you set session.maxAge to 60 seconds,
+    //   it means that the session will be valid for 60 seconds from the time of the last request.
     //
-    // This design helps keep sessions active for users who are actively interacting with the application, while allowing sessions to expire
-    // quickly once the user becomes inactive2. If you want the session to last for a fixed duration regardless of user activity, you would need
-    // to implement a different session management strategy. However, please note that allowing sessions to remain valid without activity can
-    // have security implications. It’s generally recommended to let sessions expire after a period of inactivity to reduce the risk of session hijacking2.
+    //   Every time a request is made to the server within this 60-second window, the session expiration time is reset to 60 seconds
+    //   from that request time. This is why you’re seeing the session expiration time always being one minute from the current time,
+    //   as long as requests are being made within each minute.
     //
-    // If you want to change this behavior, you might need to modify your session management strategy or consider using a different library that supports
-    // fixed-duration sessions. Always remember to consider the security implications of any changes you make to session management.
+    //   This design helps keep sessions active for users who are actively interacting with the application, while allowing sessions to expire
+    //   quickly once the user becomes inactive. If you want the session to last for a fixed duration regardless of user activity, you would need
+    //   to implement a different session management strategy. However, please note that allowing sessions to remain valid without activity can
+    //   have security implications. It's generally recommended to let sessions expire after a period of inactivity to reduce the risk of session hijacking.
+    //
+    //   If you want to change this behavior, you might need to modify your session management strategy or consider using a different library that supports
+    //   fixed-duration sessions. Always remember to consider the security implications of any changes you make to session management.
     //
     // Todo: Read these
     //
@@ -85,7 +81,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     // 3. https://stackoverflow.com/questions/77073000/how-to-set-session-maxage-dynamically-in-nextjs-using-next-auth
     //
     // If you want the session to expire regardless of activity, you would need to implement that logic yourself,
-    // as it’s not a built-in feature of NextAuth.js1. For example, you could store a timestamp in the session when it’s
+    // as it’s not a built-in feature of NextAuth.js. For example, you could store a timestamp in the session when it’s
     // created, and then check this timestamp against the current time on each request. If the difference is greater than
     // your desired max age, you could invalidate the session. However, this would require a good understanding of how
     // sessions work in NextAuth.js and careful testing to ensure it behaves as expected.
@@ -106,8 +102,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     // https://authjs.dev/getting-started/providers/credentials-tutorial
     CredentialsProvider({
       name: 'credentials',
-      // Brad does this. I don't think it's necessary.
-      // credentials: {email: { type: 'email' },password: { type: 'password' }},
+      ///////////////////////////////////////////////////////////////////////////
+      //
+      // Explicitly defining the credentials property in CredentialsProvider is not strictly necessary for NextAuth v5.
+      // The credentials property is mainly useful when you want NextAuth to generate built-in UI fields for collecting
+      // user input directly within the sign-in form. If you omit it, NextAuth will still work, assuming your authentication
+      // logic correctly extracts the email and password from the request during the authorization callback.
+      //
+      ///////////////////////////////////////////////////////////////////////////
+
+      // ⚠️ credentials: {email: { type: 'email' },password: { type: 'password' }},
       async authorize({ email, password }) {
         ///////////////////////////////////////////////////////////////////////////
         //
@@ -149,15 +153,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           throw new Error('Invalid credentials. (1)')
         }
 
-        // Find user in database
-        // Should we be try/catch this? Probably not necessary. If an error does occur,
-        // a CallbackRouteError will automatically be triggered. However, we can still
-        // try/catch it if we want to rethrow something more specific.
-
         ///////////////////////////////////////////////////////////////////////////
         //
         // ⚠️ In the Code With Antonio tutorial at 2:39:45 he makes a database call inside
-        // of authorize(), inside of CreadentialsProvider, inside of auth.config.ts.
+        // of authorize(), inside of CredentialsProvider, inside of auth.config.ts.
         // Is it safe to run Prisma logic in the authorize() and place it all in auth.config.ts?
         // Will this mess up the middleware which used authConfig and runs on the edge?
         //
@@ -175,6 +174,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         //
         ///////////////////////////////////////////////////////////////////////////
 
+        // Should we try/catch this? No. If an error occurs, a CallbackRouteError
+        // will automatically be triggered. However, we can still
+        // try/catch it if we want to rethrow something more specific.
         const user = await prisma.user.findFirst({
           where: {
             email: email
@@ -185,8 +187,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               Existence Check
         ====================== */
 
-        if (!user || !user.email || !user.password) {
-          // return null
+        if (
+          !user ||
+          typeof user !== 'object' ||
+          !user.email ||
+          typeof user.email !== 'string' ||
+          !user.password ||
+          typeof user.password !== 'string'
+        ) {
           throw new Error('Invalid credentials. (2)')
         }
 
@@ -213,19 +221,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               Password Check
         ====================== */
 
-        // ⚠️ If you're using homegrown compare, then make sure to add ENCRYPTION_KEY to Vercel.
+        // ⚠️ If you're using homegrown compare(), then make sure to add ENCRYPTION_KEY to Vercel.
         const isMatch = await compare(password as string, user.password)
-        //! const isMatch = compareSync(password as string, user.password)
-        //! Temporary..................................
-        //! const isMatch = password === user.password
-
-        // console.log(
-        //   '\n\nCredentials inside of authorize..................................'
-        // )
-        // console.log({ password, userPassword: user.password, isMatch })
 
         if (!isMatch) {
-          // return null
           throw new Error('Invalid credentials. (3)')
         }
 
@@ -241,10 +240,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ///////////////////////////////////////////////////////////////////////////
   //
   // Sometimes AI says callbacks should go in auth.config.ts.
-  // However, I don't think that this is strictly true.
-  // First of all, callbacks seem to run after the middleware.
-  // Second, we may want datbase logic in callbacks, so it makes sense
-  // to put them in auth.ts.
+  // However, I don't think this is strictly true. First of all,
+  //  callbacks seem to run after the middleware.  Second, we may want
+  // datbase logic in callbacks, so it makes sense to put them in auth.ts.
   //
   // Code With Antonio discusses this point at 3:07:45.
   // Here he makes two points:
@@ -287,7 +285,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       /////////////////////////
       //
       // This is the data returned from a google signIn:
-      //
       //
       //   user: {
       //     id: 'd0ac6fac-acfa-4f3b-8c2a-4baea144a419',

@@ -6,7 +6,7 @@ import { sleep } from '@/utils'
 ======================================================================== */
 
 const About = async () => {
-  await sleep(1000)
+  await sleep(3000)
   return (
     <Page>
       <PageContainer>
