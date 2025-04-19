@@ -31,6 +31,19 @@
 // and do admin protection logic. However, you can't interact with
 // the database in middleware.
 //
+// Or can you? Normally, you would see an error in the console,
+// even in development:
+//
+//   Error: PrismaClient is not configured to run in Vercel Edge Functions or Edge Middleware.
+//
+// In the following ByteGrad tutorial at 1:12:20, he shows how to make this possible
+// using a driver adapter, and I believe that's what we're doing when we set up our
+// custom PrismaClient.
+//
+//^ If this is true, then it means that prisma can be used here as well as in the
+//^ CredentialsProvider when CredentialsProvider is inside of auth.config.ts.
+//# As a first step, try making a random db call here to see what happens.
+//
 // The alternative would be to create a layout.tsx that wraps all
 // admin pages, and performs the necessary roles-based authentication.
 //

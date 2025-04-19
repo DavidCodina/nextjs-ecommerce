@@ -1,3 +1,31 @@
+///////////////////////////////////////////////////////////////////////////
+//
+// To integrate Neon into your Next.js app that uses Prisma and @prisma/client
+// version 6.6.0, you need to use Neon's serverless PostgreSQL driver along
+// with Prisma's official adapter for Neon. Here are the required packages:
+//
+//   @prisma/adapter-neon
+//   https://neon.tech/docs/guides/prisma
+//
+//   @neondatabase/serverless
+//   https://neon.tech/docs/guides/nextjs#create-a-nextjs-project-and-add-dependencies
+//
+//   ws
+//   https://neon.tech/docs/guides/prisma
+//
+// The setup for Prisma with Neon is highly specific.
+// However, there are more general aricles that discuss how to set up Prisma in Next.js
+// in order to avoid creating multiple PrismaClient instances.
+//
+//   https://www.prisma.io/docs/orm/more/help-and-troubleshooting/nextjs-help
+//   https://www.prisma.io/docs/orm/prisma-client/setup-and-configuration/instantiate-prisma-client
+//   https://www.prisma.io/docs/orm/prisma-client/setup-and-configuration/databases-connections
+
+//
+// This latter approach is useful for Express apps when hot relaoding.
+//
+///////////////////////////////////////////////////////////////////////////
+
 import { /* Pool, */ neonConfig } from '@neondatabase/serverless'
 import { PrismaNeon } from '@prisma/adapter-neon'
 import ws from 'ws'
@@ -5,7 +33,12 @@ import { PrismaClient /*, Prisma */ } from '@/generated/prisma'
 
 // Sets up WebSocket connections, which enables Neon to use WebSocket communication.
 neonConfig.webSocketConstructor = ws
-const connectionString = `${process.env.DATABASE_URL}`
+
+const DATABASE_URL = process.env.DATABASE_URL
+if (!DATABASE_URL) {
+  throw new Error('DATABASE_URL must be set.')
+}
+const connectionString = `${DATABASE_URL}`
 
 ///////////////////////////////////////////////////////////////////////////
 //
@@ -27,6 +60,8 @@ const connectionString = `${process.env.DATABASE_URL}`
 
 const adapter = new PrismaNeon({ connectionString })
 
+//# This implementation doesn't create any kind of logic to avoid multiple
+//# client instances. Is that handled internally?
 /* ========================================================================
 
 ======================================================================== */

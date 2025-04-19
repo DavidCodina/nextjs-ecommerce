@@ -66,8 +66,12 @@ import { getLatestProducts } from '@/lib/actions/product.actions'
 //#
 //#   1. Create a separate Express/Prisma/Postgres project to practice Prisma.
 //#   2. Review Auth.js docs
-//#   3. Create a separate version of this for Auth.js folder.
-//#   4. Get back to the Traversy eCommerce tutorial using icloud email.
+//#   3. Review all Prisma tutorials...
+//
+//#   4. Create a separate version of this for Auth.js folder.
+//#   5. Create a Neon database for the Auth.js project.
+//#      See here at 8:00 : https://www.youtube.com/watch?v=I6DCo5RwHBE&t=17s
+//#   6. Get back to the Traversy eCommerce tutorial using icloud email.
 //
 //
 ///////////////////////////////////////////////////////////////////////////
