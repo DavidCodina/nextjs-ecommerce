@@ -1,20 +1,20 @@
 import type { NextAuthConfig } from 'next-auth'
-import Github from 'next-auth/providers/github'
-import Google from 'next-auth/providers/google'
+// import Github from 'next-auth/providers/github'
+// import Google from 'next-auth/providers/google'
 
-const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID
-const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET
+// const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID
+// const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET
 
-if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET) {
-  throw new Error('GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET must be set.')
-}
+// if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET) {
+//   throw new Error('GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET must be set.')
+// }
 
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
-const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET
+// const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
+// const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET
 
-if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
-  throw new Error('GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be set.')
-}
+// if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+//   throw new Error('GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be set.')
+// }
 
 /* ========================================================================
 
@@ -72,11 +72,10 @@ export const authConfig = {
     // Some other OAuth providers may allow you to have more than one callbackUrl.
     //
     ///////////////////////////////////////////////////////////////////////////
-    Github({
-      clientId: GITHUB_CLIENT_ID,
-      clientSecret: GITHUB_CLIENT_SECRET
-    }),
-
+    // Github({
+    //   clientId: GITHUB_CLIENT_ID,
+    //   clientSecret: GITHUB_CLIENT_SECRET
+    // }),
     ///////////////////////////////////////////////////////////////////////////
     //
     // Next Auth V5 Tutorial: https://www.youtube.com/watch?v=qDRQ2EaWsNM
@@ -110,11 +109,10 @@ export const authConfig = {
     // ⚠️ How would you handle name/email updates if the user was logged in through Google provider?
     //
     ///////////////////////////////////////////////////////////////////////////
-
-    Google({
-      clientId: GOOGLE_CLIENT_ID,
-      clientSecret: GOOGLE_CLIENT_SECRET
-      // profile: (profile, tokens) => { return profile }
-    })
+    // Google({
+    //   clientId: GOOGLE_CLIENT_ID,
+    //   clientSecret: GOOGLE_CLIENT_SECRET
+    //   // profile: (profile, tokens) => { return profile }
+    // })
   ]
 } satisfies NextAuthConfig
