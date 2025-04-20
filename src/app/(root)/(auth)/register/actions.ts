@@ -56,8 +56,33 @@ export const register = async ({
     } else if (!regex.test(email)) {
       formErrors.email = 'A valid email is required. (Server)'
     } else {
-      // Or could use user.findUnique() - which is what Coding with Antionio
-      // does in getUserByEmail() utility function (2:03:00).
+      ///////////////////////////////////////////////////////////////////////////
+      //
+      // ⚠️ Case Sensitivity: https://www.prisma.io/docs/orm/prisma-client/queries/case-sensitivity
+      //
+      // Note: if email is 'DAVID@example.com' but 'david@example.com' alread exists, Prisma will
+      // throw a PrismaClientKnownRequestError because the uniqueness constraint will have failed.
+      // In other words, uniqueness is not case insensitive. Similarly, when querying for a user by
+      // email it will also be case insensitive by default.
+      //
+      // Apparently, Prisma queries are case-insensitive by default.
+      // While Prisma's query language itself is case-sensitive by default, the underlying database
+      // and its configuration can sometimes lead to case-insensitive behavior for certain operations.
+      // Thus if you did this in MySQL workbench:
+      //
+      //   SELECT * from users WHERE email = "DAVID@example.com";
+      //
+      // You would likely get back the record with email 'david@example.com'.
+      // In the case of MySQL, the case sensitivity of string comparisons is determined by the collation
+      // of the column. Collation is a set of rules that define how character data is sorted and compared.
+      //
+      // While we can rely on that default behavior, it's still a good practice to explicitly specify
+      // case-insensitivity at the level of Prisma. That said, findUnique() doesn't support the `mode`
+      // option, so you'll need to use findFirst() instead.
+      //
+      //  const existingUser = await prisma.user.findUnique({ where: { email }  })
+      //
+      ///////////////////////////////////////////////////////////////////////////
       const existingUser = await prisma.user.findFirst({
         where: {
           email: {

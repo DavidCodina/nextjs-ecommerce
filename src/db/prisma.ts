@@ -2,7 +2,9 @@
 //
 // To integrate Neon into your Next.js app that uses Prisma and @prisma/client
 // version 6.6.0, you need to use Neon's serverless PostgreSQL driver along
-// with Prisma's official adapter for Neon. Here are the required packages:
+// with Prisma's official adapter for Neon. The combination of @neondatabase/serverless
+// package with @prisma/adapter-neon is specifically designed for edge environments.
+// Here are the required packages:
 //
 //   @prisma/adapter-neon
 //   https://neon.tech/docs/guides/prisma
@@ -12,6 +14,16 @@
 //
 //   ws
 //   https://neon.tech/docs/guides/prisma
+//
+// See here for more on Prisma driver adapters:
+//
+//   https://www.prisma.io/docs/orm/overview/databases/database-drivers#driver-adapters
+//   "Driver adapters enable edge deployments of applications that use Prisma ORM."
+//
+// See here for a general guide on connecting Prisma to Neon:
+//
+//   https://www.prisma.io/docs/orm/overview/databases/neon //# Review this an all associated links.
+//
 //
 // The setup for Prisma with Neon is highly specific.
 // However, there are more general aricles that discuss how to set up Prisma in Next.js
@@ -32,6 +44,7 @@ import ws from 'ws'
 import { PrismaClient /*, Prisma */ } from '@/generated/prisma'
 
 // Sets up WebSocket connections, which enables Neon to use WebSocket communication.
+// WebSockets is critical for edge environments that don't support TCP sockets.
 neonConfig.webSocketConstructor = ws
 
 const DATABASE_URL = process.env.DATABASE_URL
@@ -51,17 +64,20 @@ const connectionString = `${DATABASE_URL}`
 //     Types of property 'options' are incompatible.
 //     Type 'PoolOptions' is not assignable to type 'string'.ts(2345)
 //
-
 // The latest updates to @prisma/adapter-neon now allow Prisma to connect directly
 // to Neon without needing Pool from @neondatabase/serverless. See here:
 // https://www.npmjs.com/package/@prisma/adapter-neon
 //
 ///////////////////////////////////////////////////////////////////////////
 
+// https://www.prisma.io/docs/orm/overview/databases/database-drivers#new-driver-adapters-api-in-v660
+// In v6.6.0, we introduced a simplified version for instantiating Prisma Client when using driver adapters.
+// You now don't need to create an instance of the driver/client to pass to a driver adapter,
+// instead you can just create the driver adapter directly (and pass the driver's options to it if needed).
+//
+// new PrismaClient({ adapter }) replaces Prisma's default connection handling with Neon's edge-compatible approach.
 const adapter = new PrismaNeon({ connectionString })
 
-//# This implementation doesn't create any kind of logic to avoid multiple
-//# client instances. Is that handled internally?
 /* ========================================================================
 
 ======================================================================== */
@@ -71,96 +87,104 @@ const adapter = new PrismaNeon({ connectionString })
 // decimals to strings. The database schema is purely declarative—it defines
 // structure but doesn’t execute transformations.
 
-export const prisma = new PrismaClient({ adapter }).$extends({
-  result: {
-    product: {
-      price: {
-        compute(product) {
-          return product.price.toString()
-        }
-      },
-      rating: {
-        compute(product) {
-          return product.rating.toString()
-        }
-      },
+// Gotcha: Brad did not include logic for preventing multiple PrismaClient instances.
+// This is explicitly demonstrated in https://neon.tech/docs/guides/prisma
+const globalForPrisma = global as unknown as { prisma: PrismaClient }
 
-      ///////////////////////////////////////////////////////////////////////////
-      //
-      // Following Brad's preemptive serialization approach, I also changed createdAt
-      // into a string. Technically, you can pass a Date across the server/client boundary, and
-      // it will automatically be seriaized into a string. Thus unlike Decimal, JSON knows how
-      // to convert this value. However, it's still a good idea to explicitly tranform the value
-      // here so that there is fidelity between the Typescript Product type and the inferred type
-      // from Prisma. The tradeoff is that if we ever need to use createdAt on the server, prior to
-      // sending it to the client, we will need to remember that it's actually an ISO 8601 string.
-      //
-      ///////////////////////////////////////////////////////////////////////////
-      createdAt: {
-        compute(product) {
-          return product.createdAt.toString()
+const prisma =
+  globalForPrisma.prisma ||
+  new PrismaClient({ adapter }).$extends({
+    result: {
+      product: {
+        price: {
+          compute(product) {
+            return product.price.toString()
+          }
+        },
+        rating: {
+          compute(product) {
+            return product.rating.toString()
+          }
+        },
+
+        ///////////////////////////////////////////////////////////////////////////
+        //
+        // Following Brad's preemptive serialization approach, I also changed createdAt
+        // into a string. Technically, you can pass a Date across the server/client boundary, and
+        // it will automatically be seriaized into a string. Thus unlike Decimal, JSON knows how
+        // to convert this value. However, it's still a good idea to explicitly tranform the value
+        // here so that there is fidelity between the Typescript Product type and the inferred type
+        // from Prisma. The tradeoff is that if we ever need to use createdAt on the server, prior to
+        // sending it to the client, we will need to remember that it's actually an ISO 8601 string.
+        //
+        ///////////////////////////////////////////////////////////////////////////
+        createdAt: {
+          compute(product) {
+            return product.createdAt.toString()
+          }
         }
       }
-    }
 
-    // cart: {
-    //   itemsPrice: {
-    //     needs: { itemsPrice: true },
-    //     compute(cart) {
-    //       return cart.itemsPrice.toString()
-    //     }
-    //   },
-    //   shippingPrice: {
-    //     needs: { shippingPrice: true },
-    //     compute(cart) {
-    //       return cart.shippingPrice.toString()
-    //     }
-    //   },
-    //   taxPrice: {
-    //     needs: { taxPrice: true },
-    //     compute(cart) {
-    //       return cart.taxPrice.toString()
-    //     }
-    //   },
-    //   totalPrice: {
-    //     needs: { totalPrice: true },
-    //     compute(cart) {
-    //       return cart.totalPrice.toString()
-    //     }
-    //   }
-    // },
-    // order: {
-    //   itemsPrice: {
-    //     needs: { itemsPrice: true },
-    //     compute(cart) {
-    //       return cart.itemsPrice.toString()
-    //     }
-    //   },
-    //   shippingPrice: {
-    //     needs: { shippingPrice: true },
-    //     compute(cart) {
-    //       return cart.shippingPrice.toString()
-    //     }
-    //   },
-    //   taxPrice: {
-    //     needs: { taxPrice: true },
-    //     compute(cart) {
-    //       return cart.taxPrice.toString()
-    //     }
-    //   },
-    //   totalPrice: {
-    //     needs: { totalPrice: true },
-    //     compute(cart) {
-    //       return cart.totalPrice.toString()
-    //     }
-    //   }
-    // },
-    // orderItem: {
-    //   price: {
-    //     compute(cart) {
-    //       return cart.price.toString()
-    //     }
-    //   }
-    // }
-  }
-})
+      // cart: {
+      //   itemsPrice: {
+      //     needs: { itemsPrice: true },
+      //     compute(cart) {
+      //       return cart.itemsPrice.toString()
+      //     }
+      //   },
+      //   shippingPrice: {
+      //     needs: { shippingPrice: true },
+      //     compute(cart) {
+      //       return cart.shippingPrice.toString()
+      //     }
+      //   },
+      //   taxPrice: {
+      //     needs: { taxPrice: true },
+      //     compute(cart) {
+      //       return cart.taxPrice.toString()
+      //     }
+      //   },
+      //   totalPrice: {
+      //     needs: { totalPrice: true },
+      //     compute(cart) {
+      //       return cart.totalPrice.toString()
+      //     }
+      //   }
+      // },
+      // order: {
+      //   itemsPrice: {
+      //     needs: { itemsPrice: true },
+      //     compute(cart) {
+      //       return cart.itemsPrice.toString()
+      //     }
+      //   },
+      //   shippingPrice: {
+      //     needs: { shippingPrice: true },
+      //     compute(cart) {
+      //       return cart.shippingPrice.toString()
+      //     }
+      //   },
+      //   taxPrice: {
+      //     needs: { taxPrice: true },
+      //     compute(cart) {
+      //       return cart.taxPrice.toString()
+      //     }
+      //   },
+      //   totalPrice: {
+      //     needs: { totalPrice: true },
+      //     compute(cart) {
+      //       return cart.totalPrice.toString()
+      //     }
+      //   }
+      // },
+      // orderItem: {
+      //   price: {
+      //     compute(cart) {
+      //       return cart.price.toString()
+      //     }
+      //   }
+      // }
+    }
+  })
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma

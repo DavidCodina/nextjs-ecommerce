@@ -6,12 +6,24 @@
 
 generator client {
   provider        = "prisma-client-js"
+  ///////////////////////////////////////////////////////////////////////////
+  //
   // Prisma has recently updated its default configuration. 
   // The Prisma Client is no longer generated inside node_modules/.prisma/client 
   // by default. Instead, users are required to explicitly define an output path.
   // Prisma now strongly recommends specifying an output location, and common 
   // choices include app/generated, src/generated, or even the project root.
+  //
+  //  https://www.prisma.io/docs/orm/prisma-client/setup-and-configuration/generating-prisma-client#the-location-of-prisma-client
+  //  We strongly recommend you define a custom output path. In Prisma ORM version 6.6.0, not defining an output path will result 
+  //  in a warning. In Prisma ORM 7, the field will be required.
+  //
+  // ⚠️ Exclude the generated directory from version control in .gitignore: /src/generated/prisma
+  // https://www.prisma.io/docs/orm/prisma-schema/overview/generators#3-exclude-the-generated-directory-from-version-control
+  //
+  ///////////////////////////////////////////////////////////////////////////
   output          = "../src/generated/prisma"
+  // https://www.prisma.io/docs/orm/overview/databases/database-drivers#driver-adapters
   previewFeatures = ["driverAdapters"]
 }
 
@@ -98,6 +110,13 @@ model User {
   //
   // Note: cuid() may be a more collision-resistant option (than uuid())
   //
+  // Prisma docs show example of using gen_random_uuid() here:
+  //
+  //   https://www.prisma.io/docs/orm/prisma-schema/data-model/unsupported-database-features#native-database-functions
+  // 
+  // https://www.prisma.io/docs/orm/prisma-schema/data-model/models#using-functions
+  // Support for autoincrement(), now(), and dbgenerated(...) differ between databases.
+  //
   ///////////////////////////////////////////////////////////////////////////
   id   String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   // Eventually switch to fistName and lastName
@@ -118,7 +137,8 @@ model User {
   // sessions Session[]
 
   password      String?
-  //# Not loving this. It's preferable to have an array of roles.
+  // An enum is also a common type for the role field.
+  // https://www.prisma.io/docs/orm/prisma-schema/data-model/models#defining-enums
   role          String   @default("user")
   address       Json?    @db.Json // @db.Json may be redundant when using Postgres.
   paymentMethod String?

@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# https://www.prisma.io/docs/orm/prisma-schema/overview/generators#3-exclude-the-generated-directory-from-version-control
+/src/generated/prisma
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
