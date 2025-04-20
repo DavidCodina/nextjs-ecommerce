@@ -89,11 +89,13 @@ const adapter = new PrismaNeon({ connectionString })
 
 // Gotcha: Brad did not include logic for preventing multiple PrismaClient instances.
 // This is explicitly demonstrated in https://neon.tech/docs/guides/prisma
-const globalForPrisma = global as unknown as { prisma: PrismaClient }
 
-const prisma =
-  globalForPrisma.prisma ||
-  new PrismaClient({ adapter }).$extends({
+/* ======================
+
+====================== */
+
+const createExtendedPrismaClient = () => {
+  return new PrismaClient({ adapter }).$extends({
     result: {
       product: {
         price: {
@@ -124,67 +126,17 @@ const prisma =
           }
         }
       }
-
-      // cart: {
-      //   itemsPrice: {
-      //     needs: { itemsPrice: true },
-      //     compute(cart) {
-      //       return cart.itemsPrice.toString()
-      //     }
-      //   },
-      //   shippingPrice: {
-      //     needs: { shippingPrice: true },
-      //     compute(cart) {
-      //       return cart.shippingPrice.toString()
-      //     }
-      //   },
-      //   taxPrice: {
-      //     needs: { taxPrice: true },
-      //     compute(cart) {
-      //       return cart.taxPrice.toString()
-      //     }
-      //   },
-      //   totalPrice: {
-      //     needs: { totalPrice: true },
-      //     compute(cart) {
-      //       return cart.totalPrice.toString()
-      //     }
-      //   }
-      // },
-      // order: {
-      //   itemsPrice: {
-      //     needs: { itemsPrice: true },
-      //     compute(cart) {
-      //       return cart.itemsPrice.toString()
-      //     }
-      //   },
-      //   shippingPrice: {
-      //     needs: { shippingPrice: true },
-      //     compute(cart) {
-      //       return cart.shippingPrice.toString()
-      //     }
-      //   },
-      //   taxPrice: {
-      //     needs: { taxPrice: true },
-      //     compute(cart) {
-      //       return cart.taxPrice.toString()
-      //     }
-      //   },
-      //   totalPrice: {
-      //     needs: { totalPrice: true },
-      //     compute(cart) {
-      //       return cart.totalPrice.toString()
-      //     }
-      //   }
-      // },
-      // orderItem: {
-      //   price: {
-      //     compute(cart) {
-      //       return cart.price.toString()
-      //     }
-      //   }
-      // }
     }
   })
+}
+
+/* ======================
+
+====================== */
+
+type ExtendedPrismaClient = ReturnType<typeof createExtendedPrismaClient>
+const globalForPrisma = global as unknown as { prisma: ExtendedPrismaClient }
+
+export const prisma = globalForPrisma.prisma || createExtendedPrismaClient()
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
