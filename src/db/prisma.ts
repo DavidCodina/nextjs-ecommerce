@@ -4,6 +4,11 @@
 // version 6.6.0, you need to use Neon's serverless PostgreSQL driver along
 // with Prisma's official adapter for Neon. The combination of @neondatabase/serverless
 // package with @prisma/adapter-neon is specifically designed for edge environments.
+//
+// Here's an official Prisma video demonstrating this process. That said, the configuration
+// is now a little different - we no longer need Pool, etc. Here's a tutorial showing the old
+// way of doing this: https://www.youtube.com/watch?v=Ti6oKI4i_Sk
+//
 // Here are the required packages:
 //
 //   @prisma/adapter-neon
@@ -38,10 +43,15 @@
 //
 ///////////////////////////////////////////////////////////////////////////
 
+// ⚠️ A Postgres cloud database can also be provisioned from console.prisma.io
+// Currently, Prisma Postgres offers only PostgreSQL as its database type.
+// Prisma officially launched Prisma Postgres as a Generally Available product on February 2nd, 2025.
+// https://www.youtube.com/watch?v=JDV8CKULPIk
+// https://www.youtube.com/watch?v=JYLSdLrKL1k
 import { /* Pool, */ neonConfig } from '@neondatabase/serverless'
 import { PrismaNeon } from '@prisma/adapter-neon'
 import ws from 'ws'
-import { PrismaClient /*, Prisma */ } from '@/generated/prisma'
+import { PrismaClient /* , Prisma */ } from '@/generated/prisma'
 
 // Sets up WebSocket connections, which enables Neon to use WebSocket communication.
 // WebSockets is critical for edge environments that don't support TCP sockets.
@@ -95,7 +105,19 @@ const adapter = new PrismaNeon({ connectionString })
 ====================== */
 
 const createExtendedPrismaClient = () => {
-  return new PrismaClient({ adapter }).$extends({
+  return new PrismaClient({
+    adapter
+    // See here at 3:30 : https://www.youtube.com/watch?v=Sdd1ScMHzrI
+    // To get the password back you should be able to locally override:  select: { password: true }
+    // omit: {
+    //   user: { password: true }
+    // }
+  }).$extends({
+    // How To Build a Prisma Client Extension: https://www.youtube.com/watch?v=j5LU6q38E-c
+    // While using $allModels is a valid approach, the video points out at 4:00 that you're
+    // sacrificing some type safety. When you use the generic $allModels approach, the runtime
+    // transformation happens, but the TypeScript types remain based on the original Prisma schema.
+    // ❌ model: { $allModels: {} },
     result: {
       product: {
         price: {
@@ -103,6 +125,7 @@ const createExtendedPrismaClient = () => {
             return product.price.toString()
           }
         },
+
         rating: {
           compute(product) {
             return product.rating.toString()

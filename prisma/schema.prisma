@@ -1,11 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider        = "prisma-client-js"
+  provider = "prisma-client-js"
   ///////////////////////////////////////////////////////////////////////////
   //
   // Prisma has recently updated its default configuration. 
@@ -22,8 +16,9 @@ generator client {
   // https://www.prisma.io/docs/orm/prisma-schema/overview/generators#3-exclude-the-generated-directory-from-version-control
   //
   ///////////////////////////////////////////////////////////////////////////
-  output          = "../src/generated/prisma"
+  output   = "../src/generated/prisma"
   // https://www.prisma.io/docs/orm/overview/databases/database-drivers#driver-adapters
+
   previewFeatures = ["driverAdapters"]
 }
 
@@ -68,6 +63,7 @@ model Product {
 
   // Note: PostgreSQL will automatically round the value to match the specified scale,
   // based on its internal rounding rules (typically round-half-up).
+  // If using Postgres, you can also use the @db.Money type.
   price      Decimal  @default(0) @db.Decimal(12, 2)
   //^ Does this mean that he has a max of three star ratings?
   rating     Decimal  @default(0) @db.Decimal(3, 2)
@@ -108,7 +104,8 @@ model User {
   //
   //   5. Constraints: The database will enforce proper UUID formatting at the database level.
   //
-  // Note: cuid() may be a more collision-resistant option (than uuid())
+  // Note: cuid() may be a more collision-resistant option than uuid().
+  // There also appears to be a ulid() that I've seen used in some official Prisma tutorials.
   //
   // Prisma docs show example of using gen_random_uuid() here:
   //
@@ -123,6 +120,9 @@ model User {
   // Brad does this:
   // name String @default("NO_NAME")
   name String
+
+  //! Temporary...
+  test String @default("Testing123...")
 
   // Brad does this, but I don't think it's necessary.
   // email         String    @unique(map: "user_email_index")
@@ -140,6 +140,10 @@ model User {
   // An enum is also a common type for the role field.
   // https://www.prisma.io/docs/orm/prisma-schema/data-model/models#defining-enums
   role          String   @default("user")
+  // Working with JSON Fields in Prisma ORM: https://www.youtube.com/watch?v=gcpcxMxJ1AQ
+  // At the 5 minute mark he shows how to use the generic path property to search for a key
+  // with a specific value.
+  // In Postgres, Json maps to jsonb by default, but why not just  use that?
   address       Json?    @db.Json // @db.Json may be redundant when using Postgres.
   paymentMethod String?
   createdAt     DateTime @default(now())
