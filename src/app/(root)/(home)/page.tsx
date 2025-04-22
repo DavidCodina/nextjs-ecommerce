@@ -95,7 +95,7 @@ const Home = async () => {
             textAlign: 'center'
           }}
         >
-          Home (v1)
+          Home (v2)
         </Title>
 
         <ProductList data={latestProducts} title='Newest Arrivals' />
