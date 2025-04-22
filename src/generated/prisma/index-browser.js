@@ -137,7 +137,6 @@ exports.Prisma.ProductScalarFieldEnum = {
 exports.Prisma.UserScalarFieldEnum = {
   id: 'id',
   name: 'name',
-  test: 'test',
   email: 'email',
   emailVerified: 'emailVerified',
   image: 'image',
@@ -189,7 +188,10 @@ exports.Prisma.JsonNullValueFilter = {
   JsonNull: Prisma.JsonNull,
   AnyNull: Prisma.AnyNull
 };
-
+exports.Role = exports.$Enums.Role = {
+  USER: 'USER',
+  ADMIN: 'ADMIN'
+};
 
 exports.Prisma.ModelName = {
   Product: 'Product',
