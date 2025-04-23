@@ -1,8 +1,8 @@
 #!/bin/sh
-if [ -n "$VERCEL_GIT_PULL_REQUEST" ] || [ "$VERCEL_GIT_COMMIT_REF" = "main" ]; then
-  echo "Proceeding with deployment"
+if [ "$VERCEL_GIT_COMMIT_REF" == "main" ] || [ "$VERCEL_GIT_COMMIT_REF" == "staging" ]; then
+  echo "Proceeding with deployment for main or staging"
   exit 0
 else
-  echo "Skipping build for non-PR and non-main branch"
+  echo "Skipping build for branch: $VERCEL_GIT_COMMIT_REF"
   exit 1
 fi
