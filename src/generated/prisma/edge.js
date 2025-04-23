@@ -211,12 +211,11 @@ const config = {
     "db"
   ],
   "activeProvider": "postgresql",
-  "postinstall": false,
   "inlineDatasources": {
     "db": {
       "url": {
         "fromEnvVar": "DATABASE_URL",
-        "value": null
+        "value": "postgresql://ecommerce_owner:npg_1CqWyHhTeif7@ep-nameless-smoke-a4t990b6-pooler.us-east-1.aws.neon.tech/ecommerce?sslmode=require"
       }
     }
   },
