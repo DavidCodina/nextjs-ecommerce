@@ -1,5 +1,5 @@
 #!/bin/sh
-if [ -n "$VERCEL_GIT_PULL_REQUEST" ] || [ "$VERCEL_GIT_COMMIT_REF" == "main" ]; then
+if [ -n "$VERCEL_GIT_PULL_REQUEST" ] || [ "$VERCEL_GIT_COMMIT_REF" = "main" ]; then
   echo "Proceeding with deployment"
   exit 0
 else
