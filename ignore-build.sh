@@ -1,5 +1,5 @@
 #!/bin/sh
-if [ "$VERCEL_GIT_COMMIT_REF" == "main" ] || [ "$VERCEL_GIT_COMMIT_REF" == "staging" ]; then
+if [ "$VERCEL_GIT_COMMIT_REF" = "main" ] || [ "$VERCEL_GIT_COMMIT_REF" = "staging" ]; then
   echo "Proceeding with deployment for main or staging"
   exit 0
 else
