@@ -119,6 +119,13 @@ const createExtendedPrismaClient = () => {
     // transformation happens, but the TypeScript types remain based on the original Prisma schema.
     // ❌ model: { $allModels: {} },
     result: {
+      user: {
+        role: {
+          compute(user) {
+            return user.role.toString()
+          }
+        }
+      },
       product: {
         price: {
           compute(product) {

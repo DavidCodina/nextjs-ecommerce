@@ -1,3 +1,6 @@
+-- CreateEnum
+CREATE TYPE "Role" AS ENUM ('USER', 'ADMIN');
+
 -- CreateTable
 CREATE TABLE "products" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
@@ -22,11 +25,12 @@ CREATE TABLE "products" (
 CREATE TABLE "users" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "name" TEXT NOT NULL,
+    "test" TEXT NOT NULL DEFAULT 'Testing123...',
     "email" TEXT NOT NULL,
     "emailVerified" TIMESTAMP(3),
     "image" TEXT,
     "password" TEXT,
-    "role" TEXT NOT NULL DEFAULT 'user',
+    "role" "Role" NOT NULL DEFAULT 'USER',
     "address" JSON,
     "paymentMethod" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,

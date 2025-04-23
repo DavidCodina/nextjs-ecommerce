@@ -37,7 +37,14 @@ async function main() {
 
   await prisma.user.createMany({ data: users })
 
-  console.log('Database seeded successfully!')
+  const createdUsers = await prisma.user.findMany()
+  const firstUser = createdUsers[0]
+  const firstUserRole = firstUser.role
+
+  console.log('Database seeded successfully!', {
+    firstUserRole,
+    type: typeof firstUserRole
+  })
 }
 
 main()

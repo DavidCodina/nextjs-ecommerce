@@ -78,6 +78,29 @@ model Product {
   @@map("products")
 }
 
+///////////////////////////////////////////////////////////////////////////
+//
+// The Prisma enum maps to the Postgres ENUM type.
+// CREATE TYPE "Role" AS ENUM ('USER', 'ADMIN');
+// Ultimately, when a query result is returned, the value is of type string (i.e., 'USER', 'ADMIN').
+// However, the inferred type is still $Enums.Role. In order to correct the type inference, I did 
+// this in src/db/prisma.ts:
+// 
+//   user: {
+//     role: {
+//       compute(user) {
+//         return user.role.toString()
+//       }
+//     }
+//   },
+//
+///////////////////////////////////////////////////////////////////////////
+
+enum Role {
+  USER
+  ADMIN
+}
+
 model User {
   ///////////////////////////////////////////////////////////////////////////
   //
@@ -121,9 +144,6 @@ model User {
   // name String @default("NO_NAME")
   name String
 
-  //! Temporary...
-  test String @default("Testing123...")
-
   // Brad does this, but I don't think it's necessary.
   // email         String    @unique(map: "user_email_index")
   email         String    @unique
@@ -136,10 +156,17 @@ model User {
   // ⚠️ At 1:52:30 Coding with Antionio removes sessions.
   // sessions Session[]
 
-  password      String?
+  password String?
   // An enum is also a common type for the role field.
   // https://www.prisma.io/docs/orm/prisma-schema/data-model/models#defining-enums
-  role          String   @default("user")
+  // ❌ role          String   @default("user")
+  //# Next Steps: 
+  //# Call npx prisma reset
+  //# Find out what the type of USER is when getting a user back.
+  //# Could just make an API call. 
+  //# Find out how to update a user and set role, etc.
+
+  role          Role     @default(USER)
   // Working with JSON Fields in Prisma ORM: https://www.youtube.com/watch?v=gcpcxMxJ1AQ
   // At the 5 minute mark he shows how to use the generic path property to search for a key
   // with a specific value.
