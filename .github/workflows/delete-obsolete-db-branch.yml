@@ -7,12 +7,25 @@ on:
 #
 # The Neon Vercel Integration is set up to automatically delete obsolete database branches.
 # A database branch is marked as obsolete in Neon when it's been deleted from GitHub.
-# However, if there is still an associated Vercel preview deployment then the database branch
-# will not be deleted. In theory, if we also deleted any associated preview deployments the
-# database branch would then get deleted eventually. In my experience, this still doesn't happen,
-# or simply takes too long. This workflow ensures that the database branch is deleted immediately.
+# However, if there's still an associated Vercel preview deployment then the database branch
+# will NOT be deleted. In theory, if we also deleted any associated Vercel preview deployments then
+# the Neon database branch would eventually get deleted. In my experience, this still doesn't happen
+# or simply takes too long. This GitHub workflow ensures that the database branch is deleted immediately.
+# However, the project's current vercel.json is still opting out of excessive preview deployments, but we
+# could remove this and the workflow would work great.
 #
-# In the assoaciate GitHub repo, go to Settings > Secrets > Actions.
+# {
+#   "git": {
+#     "deploymentEnabled": {
+#       "main": true,
+#       "staging": true,
+#       "development": true,
+#       "*": false
+#     }
+#    }
+#  }
+#
+# In the associated GitHub repo, go to Settings > Secrets > Actions.
 # Add NEON_API_KEY and NEON_PROJECT_ID
 #
 # Resources:
@@ -37,12 +50,13 @@ jobs:
     env:
       GITHUB_EVENT_REF: ${{ github.event.ref }}
 
+    # Opt out of Neon database branch deletion for protected branches.
     steps:
       - name: Check If Branch Is Protected
         id: check_protected
         run: |
           BRANCH="${{ env.GITHUB_EVENT_REF }}"
-          if [[ "$BRANCH" == "main" || "$BRANCH" == "master" || "$BRANCH" == "staging" || "$BRANCH" == "feature-g" || "$BRANCH" == "development" ]]; then
+          if [[ "$BRANCH" == "main" || "$BRANCH" == "master" || "$BRANCH" == "staging" || "$BRANCH" == "development" ]]; then
             echo "Protected branch '$BRANCH' detected. Skipping deletion for safety."
             echo "protected=true" >> $GITHUB_OUTPUT
           else
