@@ -1,5 +1,8 @@
 name: Log Branch Deletion
 
+#  When you run git push origin --delete feature-a, you're deleting the branch on the remote repository.
+# However, GitHub Actions workflows are triggered by events that happen through the GitHub interface or API.
+#A command-line delete might not trigger the event in the same way.
 on:
   delete:
     # This workflow will only run when a branch is deleted
