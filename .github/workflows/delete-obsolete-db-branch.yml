@@ -1,4 +1,8 @@
----
+name: Delete Neon Branch
+
+on:
+  delete:
+
 #--------------------------------------------------------------------------
 #
 # In the assoaciate GitHub repo, go to Settings > Secrets > Actions.
@@ -19,11 +23,6 @@
 #
 #--------------------------------------------------------------------------
 
-name: Delete Neon Branch
-
-on:
-  delete:
-
 jobs:
   delete-neon-branch:
     runs-on: ubuntu-latest
@@ -39,23 +38,3 @@ jobs:
           api_key: ${{ secrets.NEON_API_KEY }}
       - name: Log Deletion Success
         run: echo "Successfully deleted Neon database branch!"
-#--------------------------------------------------------------------------
-#
-# name: Log Branch Deletion
-#
-# on:
-#   delete:
-# jobs:
-#   log-deletion:
-#     runs-on: ubuntu-latest
-#     if: github.event.ref_type == 'branch'
-#     env:
-#       GITHUB_EVENT_REF: ${{ github.event.ref }}
-#
-#     steps:
-#       - name: Get branch name and log deletion
-#         run: |
-#           BRANCH_NAME="${GITHUB_EVENT_REF}"
-#           echo "Branch deleted bruh: $BRANCH_NAME"
-#
-#--------------------------------------------------------------------------
