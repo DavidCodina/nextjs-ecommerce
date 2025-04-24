@@ -5,6 +5,13 @@ on:
 
 #--------------------------------------------------------------------------
 #
+# The Neon Vercel Integration is set up to automatically delete obsolete database branches.
+# A database branch is marked as obsolete in Neon when it's been deleted from GitHub.
+# However, if there is still an associated Vercel preview deployment then the database branch
+# will not be deleted. In theory, if we also deleted any associated preview deployments the
+# database branch would then get deleted eventually. In my experience, this still doesn't happen,
+# or simply takes too long. This workflow ensures that the database branch is deleted immediately.
+#
 # In the assoaciate GitHub repo, go to Settings > Secrets > Actions.
 # Add NEON_API_KEY and NEON_PROJECT_ID
 #
@@ -31,8 +38,20 @@ jobs:
       GITHUB_EVENT_REF: ${{ github.event.ref }}
 
     steps:
+      - name: Check If Branch Is Protected
+        run: |
+          BRANCH="${{ env.GITHUB_EVENT_REF }}"
+          if [[ "$BRANCH" == "main" || "$BRANCH" == "master" || "$BRANCH" == "staging" || "$BRANCH" == "feature-f" || "$BRANCH" == "development" ]]; then
+            echo "Protected branch '$BRANCH' detected. Skipping deletion for safety."
+            exit 0
+          fi
+          echo "Branch '$BRANCH' is not protected. Proceeding with deletion."
+
       - name: Delete Neon Branch
         id: delete_branch
+        # If there is no associated Neon database branch, the neondatabase/delete-branch-action@v3
+        # will throw an error for the entire step. Rather than doing that, it's better to allow the
+        # step to continue (gracefully) and just log the result at the end.
         continue-on-error: true
         uses: neondatabase/delete-branch-action@v3 # https://github.com/neondatabase/delete-branch-action
         with:
@@ -47,19 +66,3 @@ jobs:
           else
             echo "Branch preview/${{ env.GITHUB_EVENT_REF }} not found or could not be deleted."
           fi
-
-# jobs:
-#   delete-neon-branch:
-#     runs-on: ubuntu-latest
-#     if: github.event.ref_type == 'branch'
-#     env:
-#       GITHUB_EVENT_REF: ${{ github.event.ref }}
-
-#     steps:
-#       - uses: neondatabase/delete-branch-action@v3 # https://github.com/neondatabase/delete-branch-action
-#         with:
-#           project_id: ${{ secrets.NEON_PROJECT_ID }}
-#           branch: preview/${{ env.GITHUB_EVENT_REF }}
-#           api_key: ${{ secrets.NEON_API_KEY }}
-#       - name: Log Deletion Success
-#         run: echo "Successfully deleted Neon database branch!"
