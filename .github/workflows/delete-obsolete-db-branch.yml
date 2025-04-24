@@ -39,15 +39,19 @@ jobs:
 
     steps:
       - name: Check If Branch Is Protected
+        id: check_protected
         run: |
           BRANCH="${{ env.GITHUB_EVENT_REF }}"
-          if [[ "$BRANCH" == "main" || "$BRANCH" == "master" || "$BRANCH" == "staging" || "$BRANCH" == "feature-f" || "$BRANCH" == "development" ]]; then
+          if [[ "$BRANCH" == "main" || "$BRANCH" == "master" || "$BRANCH" == "staging" || "$BRANCH" == "feature-g" || "$BRANCH" == "development" ]]; then
             echo "Protected branch '$BRANCH' detected. Skipping deletion for safety."
-            exit 0
+            echo "protected=true" >> $GITHUB_OUTPUT
+          else
+            echo "Branch '$BRANCH' is not protected. Proceeding with deletion."
+            echo "protected=false" >> $GITHUB_OUTPUT
           fi
-          echo "Branch '$BRANCH' is not protected. Proceeding with deletion."
 
       - name: Delete Neon Branch
+        if: steps.check_protected.outputs.protected != 'true'
         id: delete_branch
         # If there is no associated Neon database branch, the neondatabase/delete-branch-action@v3
         # will throw an error for the entire step. Rather than doing that, it's better to allow the
@@ -60,6 +64,7 @@ jobs:
           api_key: ${{ secrets.NEON_API_KEY }}
 
       - name: Log Result
+        if: steps.check_protected.outputs.protected != 'true'
         run: |
           if [ "${{ steps.delete_branch.outcome }}" == "success" ]; then
             echo "Successfully deleted Neon database branch!"
