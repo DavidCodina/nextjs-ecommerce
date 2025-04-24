@@ -1,0 +1,16 @@
+
+name: Delete Obsolete Neon Database Branch
+
+on:
+  delete:
+    # This workflow will only run when a branch is deleted
+    # No need to specify 'branches' here as the delete event is only triggered for branches
+
+jobs:
+  log-deletion:
+    runs-on: ubuntu-latest
+    if: github.event.ref_type == 'branch'
+    
+    steps:
+      - name: Log branch deletion
+        run: echo "Branch deleted: ${{ github.event.ref }}"
