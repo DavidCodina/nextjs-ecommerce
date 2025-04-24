@@ -12,4 +12,4 @@ jobs:
     
     steps:
       - name: Log branch deletion
-        run: echo "Branch deleted: ${{ github.event.ref }}"
+        run: echo "Branch deleted: ${{ github.event.payload.ref }}"
