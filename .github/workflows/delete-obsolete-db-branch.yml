@@ -31,10 +31,35 @@ jobs:
       GITHUB_EVENT_REF: ${{ github.event.ref }}
 
     steps:
-      - uses: neondatabase/delete-branch-action@v3 # https://github.com/neondatabase/delete-branch-action
+      - name: Delete Neon Branch
+        id: delete_branch
+        continue-on-error: true
+        uses: neondatabase/delete-branch-action@v3 # https://github.com/neondatabase/delete-branch-action
         with:
           project_id: ${{ secrets.NEON_PROJECT_ID }}
           branch: preview/${{ env.GITHUB_EVENT_REF }}
           api_key: ${{ secrets.NEON_API_KEY }}
-      - name: Log Deletion Success
-        run: echo "Successfully deleted Neon database branch!"
+
+      - name: Log Result
+        run: |
+          if [ "${{ steps.delete_branch.outcome }}" == "success" ]; then
+            echo "Successfully deleted Neon database branch!"
+          else
+            echo "Branch preview/${{ env.GITHUB_EVENT_REF }} not found or could not be deleted."
+          fi
+
+# jobs:
+#   delete-neon-branch:
+#     runs-on: ubuntu-latest
+#     if: github.event.ref_type == 'branch'
+#     env:
+#       GITHUB_EVENT_REF: ${{ github.event.ref }}
+
+#     steps:
+#       - uses: neondatabase/delete-branch-action@v3 # https://github.com/neondatabase/delete-branch-action
+#         with:
+#           project_id: ${{ secrets.NEON_PROJECT_ID }}
+#           branch: preview/${{ env.GITHUB_EVENT_REF }}
+#           api_key: ${{ secrets.NEON_API_KEY }}
+#       - name: Log Deletion Success
+#         run: echo "Successfully deleted Neon database branch!"
