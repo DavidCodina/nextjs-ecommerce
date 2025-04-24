@@ -1,5 +1,4 @@
-
-name: Delete Obsolete Neon Database Branch
+name: Log Branch Deletion
 
 on:
   delete:
