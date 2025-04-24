@@ -9,7 +9,9 @@ jobs:
   log-deletion:
     runs-on: ubuntu-latest
     if: github.event.ref_type == 'branch'
-    
+
     steps:
       - name: Log branch deletion
-        run: echo 'Branch deleted: ${{ github.event.ref }}'
+        env:
+          BRANCH_REF: ${{ github.event.ref }}
+        run: echo "Branch deleted - $BRANCH_REF"
