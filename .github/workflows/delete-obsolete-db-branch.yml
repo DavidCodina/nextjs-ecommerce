@@ -25,13 +25,11 @@ jobs:
   log-deletion:
     runs-on: ubuntu-latest
     if: github.event.ref_type == 'branch'
+    env:
+      GITHUB_EVENT_REF: ${{ github.event.ref }}
 
     steps:
-      # Store the branch name from the event payload into a temporary variable.
       - name: Get branch name and log deletion
         run: |
           BRANCH_NAME="${GITHUB_EVENT_REF}"
-          echo "Branch deleted: $BRANCH_NAME"
-        env:
-          # The branch name is available in the event payload's "ref" field.
-          GITHUB_EVENT_REF: ${{ github.event.ref }}
+          echo "Branch deleted bruh: $BRANCH_NAME"
