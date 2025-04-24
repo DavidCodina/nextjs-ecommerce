@@ -1,35 +1,61 @@
-name: Log Branch Deletion
+---
+#--------------------------------------------------------------------------
+#
+# In the assoaciate GitHub repo, go to Settings > Secrets > Actions.
+# Add NEON_API_KEY and NEON_PROJECT_ID
+#
+# Resources:
+#
+#   👍🏻 https://neon.tech/docs/guides/branching-github-actions
+#   👍🏻 https://github.com/neondatabase/delete-branch-action
+#
+#   Neon Developer workflow using Vercel and Github Actions at 12:45
+#   https://www.youtube.com/watch?v=jjRasfbeYHk
+#
+#   https://neon.tech/blog/branching-with-preview-environments
+#
+#   https://github.com/neondatabase-labs/preview-branches-with-vercel
+#   https://vercel.com/guides/how-do-i-use-the-ignored-build-step-field-on-vercel
+#
+#--------------------------------------------------------------------------
 
-# on:
-#   delete:
-#     # This workflow will only run when a branch is deleted
-#     # No need to specify 'branches' here as the delete event is only triggered for branches
-
-# jobs:
-#   log-deletion:
-#     runs-on: ubuntu-latest
-#     if: github.event.ref_type == 'branch'
-
-#     steps:
-#       - name: Log branch deletion
-#         env:
-#           BRANCH_REF: ${{ github.event.ref }}
-#         run: echo "Branch deleted - $BRANCH_REF"
+name: Delete Neon Branch
 
 on:
   delete:
-    # This workflow triggers on deletion events (branches and tags).
-    # It will only proceed when a branch is deleted (see the condition below).
 
 jobs:
-  log-deletion:
+  delete-neon-branch:
     runs-on: ubuntu-latest
     if: github.event.ref_type == 'branch'
     env:
       GITHUB_EVENT_REF: ${{ github.event.ref }}
 
     steps:
-      - name: Get branch name and log deletion
-        run: |
-          BRANCH_NAME="${GITHUB_EVENT_REF}"
-          echo "Branch deleted bruh: $BRANCH_NAME"
+      - uses: neondatabase/delete-branch-action@v3 # https://github.com/neondatabase/delete-branch-action
+        with:
+          project_id: ${{ secrets.NEON_PROJECT_ID }}
+          branch: preview/${{ env.GITHUB_EVENT_REF }}
+          api_key: ${{ secrets.NEON_API_KEY }}
+      - name: Log Deletion Success
+        run: echo "Successfully deleted Neon database branch!"
+#--------------------------------------------------------------------------
+#
+# name: Log Branch Deletion
+#
+# on:
+#   delete:
+# jobs:
+#   log-deletion:
+#     runs-on: ubuntu-latest
+#     if: github.event.ref_type == 'branch'
+#     env:
+#       GITHUB_EVENT_REF: ${{ github.event.ref }}
+#
+#     steps:
+#       - name: Get branch name and log deletion
+#         run: |
+#           BRANCH_NAME="${GITHUB_EVENT_REF}"
+#           echo "Branch deleted bruh: $BRANCH_NAME"
+#
+#--------------------------------------------------------------------------
