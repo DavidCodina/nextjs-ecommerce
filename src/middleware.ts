@@ -36,9 +36,12 @@
 //
 //   Error: PrismaClient is not configured to run in Vercel Edge Functions or Edge Middleware.
 //
-// In the following ByteGrad tutorial at 1:12:20, he shows how to make this possible
-// using a driver adapter, and I believe that's what we're doing when we set up our
-// custom PrismaClient.
+// In the following ByteGrad tutorial at 1:12:00 https://www.youtube.com/watch?v=QXxy8Uv1LnQ ,
+// he shows how to make this possible using a driver adapter, and I believe that's what we're
+// doing when we set up our custom PrismaClient.
+
+// Mahmoud also discusses the serverless driver and it's Edge capabilities in
+// Serverless Postgres at 43:30: https://www.youtube.com/watch?v=RaO9m8a_3ug&t=2101s
 //
 //^ If this is true, then it means that prisma can be used here as well as in the
 //^ CredentialsProvider when CredentialsProvider is inside of auth.config.ts.
