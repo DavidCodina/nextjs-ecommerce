@@ -41,7 +41,7 @@ jobs:
         uses: neondatabase/create-branch-action@v5
         with:
           project_id: ${{ env.NEON_PROJECT_ID }}
-          #! database: ${{ env.NEON_DATABASE_NAME }}
+          database: ${{ env.NEON_DATABASE_NAME }}
           branch_name: preview/pr-${{ github.event.number }}-${{ steps.branch-name.outputs.current_branch }}
           api_key: ${{ env.NEON_API_KEY }}
           #!role: ecommerce_owner #! v6
@@ -62,9 +62,9 @@ jobs:
         run: |
           touch .env
           #! echo DATABASE_URL=${{ steps.create-branch.outputs.db_url_pooled }} >> .env
-          echo DATABASE_URL=${{ steps.create-branch.outputs.db_url_with_pooler}}/ecommerce >> .env
+          echo DATABASE_URL=${{ steps.create-branch.outputs.db_url_with_pooler}} >> .env
           echo DIRECT_URL=${{ steps.create-branch.outputs.db_url }} >> .env
-          echo DATABASE_URL_UNPOOLED=${{ steps.create-branch.outputs.db_url_pooled }}/ecommerce >> .env
+          echo DATABASE_URL_UNPOOLED=${{ steps.create-branch.outputs.db_url_pooled }} >> .env
           npx prisma generate
           npx prisma migrate deploy
       - name: Install Vercel CLI
