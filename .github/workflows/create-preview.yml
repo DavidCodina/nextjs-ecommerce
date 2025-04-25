@@ -43,6 +43,7 @@ jobs:
           project_id: ${{ env.NEON_PROJECT_ID }}
           branch_name: preview/pr-${{ github.event.number }}-${{ steps.branch-name.outputs.current_branch }}
           api_key: ${{ env.NEON_API_KEY }}
+          role: ecommerce_owner
       # Pick properties off of the outputs magically created by
       # neondatabase/create-branch-action@v5 from the previous step.
       # https://github.com/neondatabase/create-branch-action?tab=readme-ov-file#outputs
