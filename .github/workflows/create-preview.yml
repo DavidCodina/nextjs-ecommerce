@@ -41,12 +41,12 @@ jobs:
         uses: neondatabase/create-branch-action@v5
         with:
           project_id: ${{ env.NEON_PROJECT_ID }}
-          database: ${{ env.NEON_DATABASE_NAME }}
+          database: ${{ env.NEON_DATABASE_NAME }} # Necessary or will default to neondb and cause error.
           branch_name: preview/pr-${{ github.event.number }}-${{ steps.branch-name.outputs.current_branch }}
           api_key: ${{ env.NEON_API_KEY }}
           #!role: ecommerce_owner #! v6
           username: ecommerce_owner #! v5
-          password: ${{ secrets.PG_PASSWORD }}
+          #! password: ${{ secrets.PG_PASSWORD }} # Unexpected input(s)
       #! - run: echo db_url_pooled ${{ steps.create-branch.outputs.db_url_pooled }}
       - run: echo db_url_with_pooler ${{ steps.create-branch.outputs.db_url_with_pooler }}
       - run: echo db_url ${{ steps.create-branch.outputs.db_url }}
@@ -64,7 +64,7 @@ jobs:
           #! echo DATABASE_URL=${{ steps.create-branch.outputs.db_url_pooled }} >> .env
           echo DATABASE_URL=${{ steps.create-branch.outputs.db_url_with_pooler}} >> .env
           echo DIRECT_URL=${{ steps.create-branch.outputs.db_url }} >> .env
-          echo DATABASE_URL_UNPOOLED=${{ steps.create-branch.outputs.db_url_pooled }} >> .env
+          echo DATABASE_URL_UNPOOLED=${{ steps.create-branch.outputs.db_url_with_pooler }} >> .env
           npx prisma generate
           npx prisma migrate deploy
       - name: Install Vercel CLI
