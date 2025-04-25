@@ -74,6 +74,8 @@ export const PageError = ({
 
         <p className='mb-4'>Error Message: {errorMessage}</p>
 
+        <p>Digest of Error: {(error as any)?.digest}</p>
+
         <div className='flex justify-center gap-2'>
           <Button
             onClick={

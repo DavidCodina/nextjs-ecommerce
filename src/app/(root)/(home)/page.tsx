@@ -78,7 +78,13 @@ import { getLatestProducts } from '@/lib/actions/product.actions'
 
 const Home = async () => {
   //! Here type _Price = Decimal
-  const latestProducts = await getLatestProducts()
+  let result: any = ''
+  try {
+    const latestProducts = await getLatestProducts()
+    result = latestProducts
+  } catch (err) {
+    result = err
+  }
 
   return (
     <Page
@@ -98,7 +104,9 @@ const Home = async () => {
           Home
         </Title>
 
-        <ProductList data={latestProducts} title='Newest Arrivals' />
+        <pre>{JSON.stringify(result, null, 2)}</pre>
+
+        {/* <ProductList data={latestProducts} title='Newest Arrivals' /> */}
       </PageContainer>
     </Page>
   )
