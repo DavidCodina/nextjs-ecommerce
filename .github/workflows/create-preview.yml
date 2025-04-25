@@ -34,7 +34,7 @@ jobs:
     permissions: write-all #! Do we need this?
     runs-on: ubuntu-latest
     steps:
-      - name Checkout
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Get branch name
