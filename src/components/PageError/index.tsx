@@ -20,6 +20,9 @@ export const PageError = ({
   message?: string
 }) => {
   const router = useRouter()
+
+  const { message: errorMessage, name } = error
+
   /* ======================
         useEffect()
   ====================== */
@@ -66,6 +69,10 @@ export const PageError = ({
         >
           {message}
         </Title>
+
+        <p className='mb-4'>Error Name: {name}</p>
+
+        <p className='mb-4'>Error Message: {errorMessage}</p>
 
         <div className='flex justify-center gap-2'>
           <Button
