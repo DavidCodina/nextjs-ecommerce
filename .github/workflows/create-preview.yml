@@ -1,7 +1,10 @@
 name: Create Preview Deployment
-on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+
+on: [pull_request]
+
+# on:
+#   pull_request:
+#     types: [opened, synchronize, reopened]
 
 env:
   NEON_DATABASE_USERNAME: ${{ secrets.PG_USERNAME }} # change this to your database username
@@ -18,17 +21,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Get branch name
         id: branch-name
         uses: tj-actions/branch-names@v8 # Does some magic to get the branch name.
+
       - name: Create Neon Branch
         id: create-branch
         uses: neondatabase/create-branch-action@v6
         with:
+          database: ${{ env.NEON_DATABASE_NAME }}
           project_id: ${{ env.NEON_PROJECT_ID }}
           branch_name: preview/pr-${{ github.event.number }}-${{ steps.branch-name.outputs.current_branch }}
           api_key: ${{ env.NEON_API_KEY }}
-          #` database: ${{ env.NEON_DATABASE_NAME }}
+          
       - name: Run Migrations
         run: |
           touch .env
