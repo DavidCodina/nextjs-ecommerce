@@ -11,24 +11,6 @@ env:
   VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
   # GH_TOKEN: ${{ secrets.GH_TOKEN }} # Required for commenting on pull requests for private repos
 
-
-#--------------------------------------------------------------------------
-#
-# Don't forget to disable automatic preview deployments that are create by Vercel.
-#
-# Resources:
-#
-#   👍🏻 https://neon.tech/docs/guides/branching-github-actions
-#   👍🏻 https://github.com/neondatabase/create-branch-action
-#
-#   Neon Developer workflow using Vercel and Github Actions at 12:45
-#   https://www.youtube.com/watch?v=jjRasfbeYHk
-#   https://github.com/neondatabase-labs/preview-branches-with-vercel
-#
-#   https://neon.tech/blog/branching-with-preview-environments
-#
-#--------------------------------------------------------------------------
-
 jobs:
   deploy-preview:
     permissions: write-all
@@ -36,20 +18,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Get branch name
         id: branch-name
         uses: tj-actions/branch-names@v8 # Does some magic to get the branch name.
-
       - name: Create Neon Branch
         id: create-branch
         uses: neondatabase/create-branch-action@v6
         with:
           project_id: ${{ env.NEON_PROJECT_ID }}
           branch_name: preview/pr-${{ github.event.number }}-${{ steps.branch-name.outputs.current_branch }}
-          # parent: dev # optional (defaults to your primary branch)
           api_key: ${{ env.NEON_API_KEY }}
-          database: ecommerce # ${{ env.NEON_DATABASE_NAME }}
+          database: ${{ env.NEON_DATABASE_NAME }}
       - name: Run Migrations
         run: |
           touch .env
@@ -85,5 +64,19 @@ jobs:
             Vercel Preview URL :rocket: : ${{ steps.deploy.outputs.preview_url }}
             Neon branch :elephant: : https://console.neon.tech/app/projects/${{ env.NEON_PROJECT_ID }}/branches/${{ steps.create-branch.outputs.branch_id }}
 
-
-
+#--------------------------------------------------------------------------
+#
+# Don't forget to disable automatic preview deployments that are create by Vercel.
+#
+# Resources:
+#
+#   👍🏻 https://neon.tech/docs/guides/branching-github-actions
+#   👍🏻 https://github.com/neondatabase/create-branch-action
+#
+#   Neon Developer workflow using Vercel and Github Actions at 12:45
+#   https://www.youtube.com/watch?v=jjRasfbeYHk
+#   https://github.com/neondatabase-labs/preview-branches-with-vercel
+#
+#   https://neon.tech/blog/branching-with-preview-environments
+#
+#--------------------------------------------------------------------------
