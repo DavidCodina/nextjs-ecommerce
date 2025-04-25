@@ -49,9 +49,8 @@ jobs:
           api_key: ${{ env.NEON_API_KEY }}
           branch_name: preview/pr-${{ github.event.number }}-${{ steps.branch-name.outputs.current_branch }}
           database: ${{ env.NEON_DATABASE_NAME }}
-           # parent: dev # optional (defaults to your primary branch)
+          # parent: dev # optional (defaults to your primary branch)
 
-      
       - name: Run Migrations
         run: |
           touch .env
