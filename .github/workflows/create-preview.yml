@@ -1,11 +1,8 @@
 name: Create Preview Deployment
-
 on: [pull_request]
-
 # on:
 #   pull_request:
 #     types: [opened, synchronize, reopened]
-
 env:
   NEON_DATABASE_USERNAME: ${{ secrets.PG_USERNAME }} # change this to your database username
   NEON_DATABASE_NAME: ${{ secrets.PG_DATABASE }} # change this to your database name
@@ -13,7 +10,6 @@ env:
   NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }} # You can find this in your project settings
   VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
   # GH_TOKEN: ${{ secrets.GH_TOKEN }} # Required for commenting on pull requests for private repos
-
 jobs:
   deploy-preview:
     permissions: write-all
@@ -21,11 +17,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Get branch name
         id: branch-name
         uses: tj-actions/branch-names@v8 # Does some magic to get the branch name.
-
       - name: Create Neon Branch
         id: create-branch
         uses: neondatabase/create-branch-action@v6
@@ -34,7 +28,6 @@ jobs:
           project_id: ${{ env.NEON_PROJECT_ID }}
           branch_name: preview/pr-${{ github.event.number }}-${{ steps.branch-name.outputs.current_branch }}
           api_key: ${{ env.NEON_API_KEY }}
-          
       - name: Run Migrations
         run: |
           touch .env
@@ -46,22 +39,17 @@ jobs:
 
           npx prisma generate
           npx prisma migrate deploy
-
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
-
       - name: Pull Vercel Environment Information
         run: vercel pull --yes --environment=preview --token=${{ env.VERCEL_TOKEN }}
-
       # Will my vercel-build command interfere with this setup?
       # Probably not because of the --prebuilt used below.
       - name: Build Project Artifacts
         run: vercel build --token=${{ env.VERCEL_TOKEN }}
-
       - name: Deploy Preview to Vercel
         id: deploy
         run: echo preview_url=$(vercel deploy --prebuilt --token=${{ env.VERCEL_TOKEN }}) >> $GITHUB_OUTPUT
-
       - name: Comment on Pull Request
         uses: thollander/actions-comment-pull-request@v2
         with:
