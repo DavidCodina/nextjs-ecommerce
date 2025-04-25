@@ -47,11 +47,15 @@ jobs:
       # Pick properties off of the outputs magically created by
       # neondatabase/create-branch-action@v5 from the previous step.
       # https://github.com/neondatabase/create-branch-action?tab=readme-ov-file#outputs
+      #
+      # Gotcha: The DIRECT_URL variable is what Prisma looks for by default for direct database connections.
+      # However, Neon's Vercel integration historically uses DATABASE_URL_UNPOOLED
       - name: Run Migrations
         run: |
           touch .env
           echo DATABASE_URL=${{ steps.create-branch.outputs.db_url_pooled }} >> .env
           echo DIRECT_URL=${{ steps.create-branch.outputs.db_url }} >> .env
+          echo DATABASE_URL_UNPOOLED=${{ steps.create-branch.outputs.db_url }} >> .env
           npx prisma generate
           npx prisma migrate deploy
       - name: Install Vercel CLI
