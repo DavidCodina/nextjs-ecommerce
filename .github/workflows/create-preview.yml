@@ -41,13 +41,15 @@ jobs:
         uses: neondatabase/create-branch-action@v5
         with:
           project_id: ${{ env.NEON_PROJECT_ID }}
-          database: ${{ env.NEON_DATABASE_NAME }}
+          #! database: ${{ env.NEON_DATABASE_NAME }}
           branch_name: preview/pr-${{ github.event.number }}-${{ steps.branch-name.outputs.current_branch }}
           api_key: ${{ env.NEON_API_KEY }}
           #!role: ecommerce_owner #! v6
           username: ecommerce_owner #! v5
+          password: ${{ secrets.PG_PASSWORD }}
+      #! - run: echo db_url_pooled ${{ steps.create-branch.outputs.db_url_pooled }}
+      - run: echo db_url_with_pooler ${{ steps.create-branch.outputs.db_url_with_pooler }}
       - run: echo db_url ${{ steps.create-branch.outputs.db_url }}
-      - run: echo db_url_pooled ${{ steps.create-branch.outputs.db_url_pooled }}
       - run: echo host ${{ steps.create-branch.outputs.host }}
       - run: echo branch_id ${{ steps.create-branch.outputs.branch_id }}
       # Pick properties off of the outputs magically created by
@@ -59,9 +61,10 @@ jobs:
       - name: Run Migrations
         run: |
           touch .env
-          echo DATABASE_URL=${{ steps.create-branch.outputs.db_url_pooled }} >> .env
+          #! echo DATABASE_URL=${{ steps.create-branch.outputs.db_url_pooled }} >> .env
+          echo DATABASE_URL=${{ steps.create-branch.outputs.db_url_with_pooler}}/ecommerce >> .env
           echo DIRECT_URL=${{ steps.create-branch.outputs.db_url }} >> .env
-          echo DATABASE_URL_UNPOOLED=${{ steps.create-branch.outputs.db_url }} >> .env
+          echo DATABASE_URL_UNPOOLED=${{ steps.create-branch.outputs.db_url_pooled }}/ecommerce >> .env
           npx prisma generate
           npx prisma migrate deploy
       - name: Install Vercel CLI
@@ -75,7 +78,7 @@ jobs:
       - name: Deploy Preview to Vercel
         id: deploy
         run: echo preview_url=$(vercel deploy --prebuilt --token=${{ env.VERCEL_TOKEN }}) >> $GITHUB_OUTPUT
-        # run: echo preview_url=$(vercel deploy --prebuilt --token=${{ env.VERCEL_TOKEN }} --env DATABASE_URL=${{ steps.create-branch.outputs.db_url_pooled }} --env DIRECT_URL=${{ steps.create-branch.outputs.db_url }} --env DATABASE_URL_UNPOOLED=${{ steps.create-branch.outputs.db_url }}) >> $GITHUB_OUTPUT
+        #! run: echo preview_url=$(vercel deploy --prebuilt --token=${{ env.VERCEL_TOKEN }} --env DATABASE_URL=${{ steps.create-branch.outputs.db_url_pooled }} --env DIRECT_URL=${{ steps.create-branch.outputs.db_url }} --env DATABASE_URL_UNPOOLED=${{ steps.create-branch.outputs.db_url }}) >> $GITHUB_OUTPUT
       - name: Comment on Pull Request
         uses: thollander/actions-comment-pull-request@v2
         with:
