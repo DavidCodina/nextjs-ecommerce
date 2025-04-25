@@ -1,8 +1,7 @@
 name: Create Preview Deployment
+# https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#pull_request
+# By default, a workflow only runs when a pull_request event's activity type is opened, synchronize, or reopened.
 on: [pull_request]
-# on:
-#   pull_request:
-#     types: [opened, synchronize, reopened]
 env:
   NEON_DATABASE_USERNAME: ${{ secrets.PG_USERNAME }} # change this to your database username
   NEON_DATABASE_NAME: ${{ secrets.PG_DATABASE }} # change this to your database name
@@ -10,6 +9,22 @@ env:
   NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }} # You can find this in your project settings
   VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
   # GH_TOKEN: ${{ secrets.GH_TOKEN }} # Required for commenting on pull requests for private repos
+  #--------------------------------------------------------------------------
+  #
+  # Don't forget to disable automatic preview deployments that are create by Vercel.
+  #
+  # Resources:
+  #
+  #   👍🏻 https://neon.tech/docs/guides/branching-github-actions
+  #   👍🏻 https://github.com/neondatabase/create-branch-action
+  #
+  #   Neon Developer workflow using Vercel and Github Actions at 12:45
+  #   https://www.youtube.com/watch?v=jjRasfbeYHk
+  #   https://github.com/neondatabase-labs/preview-branches-with-vercel
+  #
+  #   https://neon.tech/blog/branching-with-preview-environments
+  #
+  #--------------------------------------------------------------------------
 jobs:
   deploy-preview:
     permissions: write-all
@@ -56,20 +71,3 @@ jobs:
           message: |
             Vercel Preview URL :rocket: : ${{ steps.deploy.outputs.preview_url }}
             Neon branch :elephant: : https://console.neon.tech/app/projects/${{ env.NEON_PROJECT_ID }}/branches/${{ steps.create-branch.outputs.branch_id }}
-
-#--------------------------------------------------------------------------
-#
-# Don't forget to disable automatic preview deployments that are create by Vercel.
-#
-# Resources:
-#
-#   👍🏻 https://neon.tech/docs/guides/branching-github-actions
-#   👍🏻 https://github.com/neondatabase/create-branch-action
-#
-#   Neon Developer workflow using Vercel and Github Actions at 12:45
-#   https://www.youtube.com/watch?v=jjRasfbeYHk
-#   https://github.com/neondatabase-labs/preview-branches-with-vercel
-#
-#   https://neon.tech/blog/branching-with-preview-environments
-#
-#--------------------------------------------------------------------------
