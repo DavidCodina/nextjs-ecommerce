@@ -1,0 +1,91 @@
+name: Create Preview Deployment
+on: [pull_request]
+
+env:
+  NEON_DATABASE_USERNAME: ${{ secrets.PG_USERNAME }} # change this to your database username
+  NEON_DATABASE_NAME: ecommerce # ${{ secrets.PG_DATABASE }} # change this to your database name
+  NEON_API_KEY: ${{ secrets.NEON_API_KEY }} # You can generate a an API key in your account settings
+  NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }} # You can find this in your project settings
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+  # GH_TOKEN: ${{ secrets.GH_TOKEN }} # Required for commenting on pull requests for private repos
+
+
+
+
+#--------------------------------------------------------------------------
+#
+# Don't forget to disable automatic preview deployments that are create by Vercel.
+#
+# Resources:
+#
+#   👍🏻 https://neon.tech/docs/guides/branching-github-actions
+#   👍🏻 https://github.com/neondatabase/create-branch-action
+#
+#   Neon Developer workflow using Vercel and Github Actions at 12:45
+#   https://www.youtube.com/watch?v=jjRasfbeYHk
+#   https://github.com/neondatabase-labs/preview-branches-with-vercel
+#
+#   https://neon.tech/blog/branching-with-preview-environments
+#
+#--------------------------------------------------------------------------
+
+jobs:
+  deploy-preview:
+    permissions: write-all #! Do we need this?
+    runs-on: ubuntu-latest
+    steps:
+      - name Checkout
+        uses: actions/checkout@v4
+
+      - name: Get branch name
+        id: branch-name
+        uses: tj-actions/branch-names@v8 # Does some magic to get the branch name.
+
+      - name: Create Neon Branch
+        id: create-branch
+        uses: neondatabase/create-branch-action@v6
+        with:
+          project_id: ${{ env.NEON_PROJECT_ID }}
+          api_key: ${{ env.NEON_API_KEY }}
+          branch_name: preview/pr-${{ github.event.number }}-${{ steps.branch-name.outputs.current_branch }}
+          database: ${{ env.NEON_DATABASE_NAME }}
+           # parent: dev # optional (defaults to your primary branch)
+
+      
+      - name: Run Migrations
+        run: |
+          touch .env
+      # Pick properties off of the outputs magically created by 
+      # neondatabase/create-branch-action@v5 from the previous step.
+      # https://github.com/neondatabase/create-branch-action?tab=readme-ov-file#outputs
+          echo DATABASE_URL=${{ steps.create-branch.outputs.db_url_pooled }} >> .env
+          echo DIRECT_URL=${{ steps.create-branch.outputs.db_url }} >> .env
+
+          npx prisma generate
+          npx prisma migrate deploy
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=preview --token=${{ env.VERCEL_TOKEN }}
+
+      # Will my vercel-build command interfere with this setup?
+      # Probably not because of the --prebuilt used below.
+      - name: Build Project Artifacts
+        run: vercel build --token=${{ env.VERCEL_TOKEN }}
+
+      - name: Deploy Preview to Vercel
+        id: deploy
+        run: echo preview_url=$(vercel deploy --prebuilt --token=${{ env.VERCEL_TOKEN }}) >> $GITHUB_OUTPUT
+
+      - name: Comment on Pull Request
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          # GITHUB_TOKEN: ${{ env.GH_TOKEN }}
+          message: |
+            Vercel Preview URL :rocket: : ${{ steps.deploy.outputs.preview_url }}
+            Neon branch :elephant: : https://console.neon.tech/app/projects/${{ env.NEON_PROJECT_ID }}/branches/${{ steps.create-branch.outputs.branch_id }}
+
+
+
