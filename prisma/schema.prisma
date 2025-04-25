@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   ///////////////////////////////////////////////////////////////////////////
   //
   // Prisma has recently updated its default configuration. 
@@ -16,10 +16,10 @@ generator client {
   // https://www.prisma.io/docs/orm/prisma-schema/overview/generators#3-exclude-the-generated-directory-from-version-control
   //
   ///////////////////////////////////////////////////////////////////////////
-  output   = "../src/generated/prisma"
+  output          = "../src/generated/prisma"
   // https://www.prisma.io/docs/orm/overview/databases/database-drivers#driver-adapters
-
   previewFeatures = ["driverAdapters"]
+  binaryTargets   = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {

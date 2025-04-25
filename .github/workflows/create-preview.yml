@@ -24,6 +24,22 @@ env:
   #
   #   https://neon.tech/blog/branching-with-preview-environments
   #
+  # Gotcha: Unhandled Rejection: Error [PrismaClientInitializationError]: Prisma Client could
+  # not locate the Query Engine for runtime "rhel-openssl-3.0.x". This happened because Prisma
+  # Client was generated for "debian-openssl-3.0.x", but the actual deployment required "rhel-openssl-3.0.x".
+  # Add "rhel-openssl-3.0.x" to `binaryTargets` in the "schema.prisma" file and run `prisma generate`
+  # after saving it. Add this to the generator client in schema.prisma: provider = "prisma-client-js"
+  #
+  # Vercel’s built-in preview deployments likely use an environment where Prisma’s query engine binary
+  # (debian-openssl-3.0.x) is automatically compatible. When you started using GitHub Actions to manually
+  # trigger previews, the workflow runs on a different base image that requires rhel-openssl-3.0.x,
+  # hence the Prisma mismatch.
+  #
+  # GitHub Actions Runners Use Ubuntu. This means that Prisma was generated for Ubuntu (Debian-based)
+  # when your workflow executed the prisma generate command. However, when your app is deployed to Vercel,
+  # the runtime expects RHEL-based binaries—hence the PrismaClientInitializationError.
+  #
+  #
   #--------------------------------------------------------------------------
 jobs:
   deploy-preview:
@@ -46,12 +62,14 @@ jobs:
           api_key: ${{ env.NEON_API_KEY }}
           #!role: ecommerce_owner #! v6
           username: ecommerce_owner #! v5
+          ## prisma: true
           #! password: ${{ secrets.PG_PASSWORD }} # Unexpected input(s)
       #! - run: echo db_url_pooled ${{ steps.create-branch.outputs.db_url_pooled }}
       - run: echo db_url_with_pooler ${{ steps.create-branch.outputs.db_url_with_pooler }}
       - run: echo db_url ${{ steps.create-branch.outputs.db_url }}
       - run: echo host ${{ steps.create-branch.outputs.host }}
       - run: echo branch_id ${{ steps.create-branch.outputs.branch_id }}
+
       # Pick properties off of the outputs magically created by
       # neondatabase/create-branch-action@v5 from the previous step.
       # https://github.com/neondatabase/create-branch-action?tab=readme-ov-file#outputs
