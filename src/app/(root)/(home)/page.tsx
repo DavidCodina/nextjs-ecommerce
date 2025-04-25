@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { Page, PageContainer, Title } from '@/components'
-import { ProductList } from '@/components/product/ProductList'
+// import { ProductList } from '@/components/product/ProductList'
 import { getLatestProducts } from '@/lib/actions/product.actions'
 // ❌ import sampleData from '@/db/sample-data'
 
