@@ -68,7 +68,8 @@ jobs:
         run: vercel build --token=${{ env.VERCEL_TOKEN }}
       - name: Deploy Preview to Vercel
         id: deploy
-        run: echo preview_url=$(vercel deploy --prebuilt --token=${{ env.VERCEL_TOKEN }}) >> $GITHUB_OUTPUT
+        # run: echo preview_url=$(vercel deploy --prebuilt --token=${{ env.VERCEL_TOKEN }}) >> $GITHUB_OUTPUT
+        run: echo preview_url=$(vercel deploy --prebuilt --token=${{ env.VERCEL_TOKEN }} --env DATABASE_URL=${{ steps.create-branch.outputs.db_url_pooled }} --env DIRECT_URL=${{ steps.create-branch.outputs.db_url }} --env DATABASE_URL_UNPOOLED=${{ steps.create-branch.outputs.db_url }}) >> $GITHUB_OUTPUT
       - name: Comment on Pull Request
         uses: thollander/actions-comment-pull-request@v2
         with:
