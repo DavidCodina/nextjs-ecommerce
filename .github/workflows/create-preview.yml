@@ -37,13 +37,19 @@ jobs:
         uses: tj-actions/branch-names@v8 # Does some magic to get the branch name.
       - name: Create Neon Branch
         id: create-branch
-        uses: neondatabase/create-branch-action@v6
+        #! uses: neondatabase/create-branch-action@v6
+        uses: neondatabase/create-branch-action@v5
         with:
-          database: ${{ env.NEON_DATABASE_NAME }}
           project_id: ${{ env.NEON_PROJECT_ID }}
+          database: ${{ env.NEON_DATABASE_NAME }}
           branch_name: preview/pr-${{ github.event.number }}-${{ steps.branch-name.outputs.current_branch }}
           api_key: ${{ env.NEON_API_KEY }}
-          role: ecommerce_owner
+          #!role: ecommerce_owner #! v6
+          username: ecommerce_owner #! v5
+      - run: echo db_url ${{ steps.create-branch.outputs.db_url }}
+      - run: echo db_url_pooled ${{ steps.create-branch.outputs.db_url_pooled }}
+      - run: echo host ${{ steps.create-branch.outputs.host }}
+      - run: echo branch_id ${{ steps.create-branch.outputs.branch_id }}
       # Pick properties off of the outputs magically created by
       # neondatabase/create-branch-action@v5 from the previous step.
       # https://github.com/neondatabase/create-branch-action?tab=readme-ov-file#outputs
@@ -68,8 +74,8 @@ jobs:
         run: vercel build --token=${{ env.VERCEL_TOKEN }}
       - name: Deploy Preview to Vercel
         id: deploy
-        # run: echo preview_url=$(vercel deploy --prebuilt --token=${{ env.VERCEL_TOKEN }}) >> $GITHUB_OUTPUT
-        run: echo preview_url=$(vercel deploy --prebuilt --token=${{ env.VERCEL_TOKEN }} --env DATABASE_URL=${{ steps.create-branch.outputs.db_url_pooled }} --env DIRECT_URL=${{ steps.create-branch.outputs.db_url }} --env DATABASE_URL_UNPOOLED=${{ steps.create-branch.outputs.db_url }}) >> $GITHUB_OUTPUT
+        run: echo preview_url=$(vercel deploy --prebuilt --token=${{ env.VERCEL_TOKEN }}) >> $GITHUB_OUTPUT
+        # run: echo preview_url=$(vercel deploy --prebuilt --token=${{ env.VERCEL_TOKEN }} --env DATABASE_URL=${{ steps.create-branch.outputs.db_url_pooled }} --env DIRECT_URL=${{ steps.create-branch.outputs.db_url }} --env DATABASE_URL_UNPOOLED=${{ steps.create-branch.outputs.db_url }}) >> $GITHUB_OUTPUT
       - name: Comment on Pull Request
         uses: thollander/actions-comment-pull-request@v2
         with:
