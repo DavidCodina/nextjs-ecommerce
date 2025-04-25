@@ -101,7 +101,7 @@ const Home = async () => {
             textAlign: 'center'
           }}
         >
-          Home
+          Home Feature 7
         </Title>
 
         <pre>{JSON.stringify(result, null, 2)}</pre>
