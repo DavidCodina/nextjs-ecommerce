@@ -81,7 +81,7 @@ jobs:
       #! However, Neon's Vercel integration historically uses DATABASE_URL_UNPOOLED
       - name: Run Migrations
         env:
-          PRISMA_CLI_BINARY_TARGETS: rhel-openssl-3.0.x
+          PRISMA_CLI_BINARY_TARGETS: debian-openssl-3.0.x,rhel-openssl-3.0.x
         run: |
           touch .env
           ## neondatabase/create-branch-action@v6 : echo DATABASE_URL=${{ steps.create-branch.outputs.db_url_pooled }} >> .env
