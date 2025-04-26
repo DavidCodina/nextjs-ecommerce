@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { Page, PageContainer, Title } from '@/components'
-// import { ProductList } from '@/components/product/ProductList'
+import { ProductList } from '@/components/product/ProductList'
 import { getLatestProducts } from '@/lib/actions/product.actions'
 // ❌ import sampleData from '@/db/sample-data'
 
@@ -78,13 +78,7 @@ import { getLatestProducts } from '@/lib/actions/product.actions'
 
 const Home = async () => {
   //! Here type _Price = Decimal
-  let result: any = ''
-  try {
-    const latestProducts = await getLatestProducts()
-    result = latestProducts
-  } catch (err) {
-    result = err
-  }
+  const latestProducts = await getLatestProducts()
 
   return (
     <Page
@@ -104,9 +98,7 @@ const Home = async () => {
           Home
         </Title>
 
-        <pre>{JSON.stringify(result, null, 2)}</pre>
-
-        {/* <ProductList data={latestProducts} title='Newest Arrivals' /> */}
+        <ProductList data={latestProducts} title='Newest Arrivals' />
       </PageContainer>
     </Page>
   )

@@ -24,23 +24,26 @@ env:
   #
   #   https://neon.tech/blog/branching-with-preview-environments
   #
-  # Gotcha: Unhandled Rejection: Error [PrismaClientInitializationError]: Prisma Client could
-  # not locate the Query Engine for runtime "rhel-openssl-3.0.x". This happened because Prisma
-  # Client was generated for "debian-openssl-3.0.x", but the actual deployment required "rhel-openssl-3.0.x".
-  # Add "rhel-openssl-3.0.x" to `binaryTargets` in the "schema.prisma" file and run `prisma generate`
-  # after saving it. Add this to the generator client in schema.prisma: provider = "prisma-client-js"
+  # Gotcha:
   #
-  # Vercel’s built-in preview deployments likely use an environment where Prisma’s query engine binary
-  # (debian-openssl-3.0.x) is automatically compatible. When you started using GitHub Actions to manually
-  # trigger previews, the workflow runs on a different base image that requires rhel-openssl-3.0.x,
-  # hence the Prisma mismatch.
+  #   Unhandled Rejection: Error [PrismaClientInitializationError]: Prisma Client could
+  #   not locate the Query Engine for runtime "rhel-openssl-3.0.x". This happened because Prisma
+  #   Client was generated for "debian-openssl-3.0.x", but the actual deployment required "rhel-openssl-3.0.x".
+  #   Add "rhel-openssl-3.0.x" to `binaryTargets` in the "schema.prisma" file and run `prisma generate`
+  #   after saving it. Add this to the generator client in schema.prisma: provider = "prisma-client-js"
   #
-  # GitHub Actions Runners Use Ubuntu. This means that Prisma was generated for Ubuntu (Debian-based)
-  # when your workflow executed the prisma generate command. However, when your app is deployed to Vercel,
-  # the runtime expects RHEL-based binaries—hence the PrismaClientInitializationError.
-  #
-  #
-  #--------------------------------------------------------------------------
+  # The error arises from a platform mismatch between your GitHub Actions environment (Ubuntu/debian)
+  # and Vercel's runtime environment (rhel). Prisma Client requires platform-specific Query Engine
+  # binaries matched to the deployment environment. Your workflow built Prisma Client for
+  # debian-openssl-3.0.x (Ubuntu), but Vercel's serverless environment uses rhel-openssl-3.0.x
+#
+# GitHub Actions Runners Use Ubuntu. This means that Prisma was generated for Ubuntu (Debian-based)
+# when your workflow executed the prisma generate command. However, when your app is deployed to Vercel,
+# the runtime expects RHEL-based binaries—hence the PrismaClientInitializationError.
+#
+# https://www.prisma.io/docs/orm/prisma-schema/overview/generators#binary-targets
+#
+#--------------------------------------------------------------------------
 jobs:
   deploy-preview:
     permissions: write-all
@@ -48,23 +51,23 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Get branch name
+      - name: Get Branch Name
         id: branch-name
         uses: tj-actions/branch-names@v8 # Does some magic to get the branch name.
       - name: Create Neon Branch
         id: create-branch
-        #! uses: neondatabase/create-branch-action@v6
+        ## uses: neondatabase/create-branch-action@v6
         uses: neondatabase/create-branch-action@v5
         with:
           project_id: ${{ env.NEON_PROJECT_ID }}
           database: ${{ env.NEON_DATABASE_NAME }} # Necessary or will default to neondb and cause error.
           branch_name: preview/pr-${{ github.event.number }}-${{ steps.branch-name.outputs.current_branch }}
           api_key: ${{ env.NEON_API_KEY }}
-          #!role: ecommerce_owner #! v6
-          username: ecommerce_owner #! v5
-          ## prisma: true
-          #! password: ${{ secrets.PG_PASSWORD }} # Unexpected input(s)
-      #! - run: echo db_url_pooled ${{ steps.create-branch.outputs.db_url_pooled }}
+          ## role: ecommerce_owner # v6
+          username: ecommerce_owner # v5 only - use role in v6
+          ## prisma: true # This doesn't seem necessary.
+          # ❌ password: ${{ secrets.PG_PASSWORD }} # Unexpected input(s)
+      ## neondatabase/create-branch-action@v6 : echo db_url_pooled ${{ steps.create-branch.outputs.db_url_pooled }}
       - run: echo db_url_with_pooler ${{ steps.create-branch.outputs.db_url_with_pooler }}
       - run: echo db_url ${{ steps.create-branch.outputs.db_url }}
       - run: echo host ${{ steps.create-branch.outputs.host }}
@@ -74,15 +77,18 @@ jobs:
       # neondatabase/create-branch-action@v5 from the previous step.
       # https://github.com/neondatabase/create-branch-action?tab=readme-ov-file#outputs
       #
-      # Gotcha: The DIRECT_URL variable is what Prisma looks for by default for direct database connections.
-      # However, Neon's Vercel integration historically uses DATABASE_URL_UNPOOLED
+      #! Gotcha: The DIRECT_URL variable is what Prisma looks for by default for direct database connections.
+      #! However, Neon's Vercel integration historically uses DATABASE_URL_UNPOOLED
       - name: Run Migrations
+        env:
+          PRISMA_CLI_BINARY_TARGETS: rhel-openssl-3.0.x
         run: |
           touch .env
-          #! echo DATABASE_URL=${{ steps.create-branch.outputs.db_url_pooled }} >> .env
+          ## neondatabase/create-branch-action@v6 : echo DATABASE_URL=${{ steps.create-branch.outputs.db_url_pooled }} >> .env
           echo DATABASE_URL=${{ steps.create-branch.outputs.db_url_with_pooler}} >> .env
           echo DIRECT_URL=${{ steps.create-branch.outputs.db_url }} >> .env
-          echo DATABASE_URL_UNPOOLED=${{ steps.create-branch.outputs.db_url_with_pooler }} >> .env
+          ## neondatabase/create-branch-action@v6 : echo DATABASE_URL_UNPOOLED=${{ steps.create-branch.outputs.db_url_pooled  }} >> .env
+          #!echo DATABASE_URL_UNPOOLED=${{ steps.create-branch.outputs.db_url_with_pooler }} >> .env
           npx prisma generate
           npx prisma migrate deploy
       - name: Install Vercel CLI
@@ -96,7 +102,6 @@ jobs:
       - name: Deploy Preview to Vercel
         id: deploy
         run: echo preview_url=$(vercel deploy --prebuilt --token=${{ env.VERCEL_TOKEN }}) >> $GITHUB_OUTPUT
-        #! run: echo preview_url=$(vercel deploy --prebuilt --token=${{ env.VERCEL_TOKEN }} --env DATABASE_URL=${{ steps.create-branch.outputs.db_url_pooled }} --env DIRECT_URL=${{ steps.create-branch.outputs.db_url }} --env DATABASE_URL_UNPOOLED=${{ steps.create-branch.outputs.db_url }}) >> $GITHUB_OUTPUT
       - name: Comment on Pull Request
         uses: thollander/actions-comment-pull-request@v2
         with:
