@@ -20,6 +20,7 @@ export const PageError = ({
   message?: string
 }) => {
   const router = useRouter()
+
   /* ======================
         useEffect()
   ====================== */

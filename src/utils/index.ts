@@ -7,6 +7,8 @@ export * from './log'
 export * from './randomFail'
 export * from './searchParamsToObject'
 export * from './sleep'
+export * from './isPromise'
 
 export * from './serializeData'
 export * from './formatNumberWithDecimal'
+export * from './formatError'

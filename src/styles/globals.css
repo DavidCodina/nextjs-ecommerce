@@ -410,8 +410,9 @@ Tailwind utility classes. */
 
 @plugin 'tailwindcss-animate';
 
+@plugin '../tw-plugins//placeholderPlugin';
 @plugin '../tw-plugins/readMorePlugin';
-@plugin '../tw-plugins/spinnerPlugin.ts';
+@plugin '../tw-plugins/spinnerPlugin';
 
 /* ======================
         Variants

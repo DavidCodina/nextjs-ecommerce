@@ -6,6 +6,9 @@ const key = new TextEncoder().encode(process.env.ENCRYPTION_KEY) // Retrieve key
 ======================================================================== */
 // Hash function with key-based encryption
 
+//! At what point in the tutorial does Brad begin using this instead of bscript-ts-edge?
+//! When does he define ENCRYPTION_KEY ?
+
 export const hash = async (plainPassword: string): Promise<string> => {
   const passwordData = encoder.encode(plainPassword)
 
@@ -18,9 +21,12 @@ export const hash = async (plainPassword: string): Promise<string> => {
   )
 
   const hashBuffer = await crypto.subtle.sign('HMAC', cryptoKey, passwordData)
-  return Array.from(new Uint8Array(hashBuffer))
+
+  const result = Array.from(new Uint8Array(hashBuffer))
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('')
+
+  return result
 }
 
 /* ========================================================================

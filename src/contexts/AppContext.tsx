@@ -21,6 +21,8 @@ export interface AppContextValue {
   test: string
   routePending: boolean
   handleRouteChange: (route: string) => void
+  sessionKey: number
+  setSessionKey: React.Dispatch<React.SetStateAction<number>>
   // [key: string]: any
 }
 
@@ -31,6 +33,7 @@ export interface AppContextValue {
 export const AppContext = createContext({} as AppContextValue)
 
 export const AppProvider = ({ children }: PropsWithChildren) => {
+  const [sessionKey, setSessionKey] = useState(0)
   const pathname = usePathname()
   const previousPath = useRef<string | null>('')
 
@@ -90,7 +93,9 @@ export const AppProvider = ({ children }: PropsWithChildren) => {
       value={{
         test: 'Testing 123...',
         routePending,
-        handleRouteChange
+        handleRouteChange,
+        sessionKey,
+        setSessionKey
       }}
     >
       {children}

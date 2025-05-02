@@ -1,18 +1,28 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider        = "prisma-client-js"
+  ///////////////////////////////////////////////////////////////////////////
+  //
   // Prisma has recently updated its default configuration. 
   // The Prisma Client is no longer generated inside node_modules/.prisma/client 
   // by default. Instead, users are required to explicitly define an output path.
   // Prisma now strongly recommends specifying an output location, and common 
   // choices include app/generated, src/generated, or even the project root.
+  //
+  //  https://www.prisma.io/docs/orm/prisma-client/setup-and-configuration/generating-prisma-client#the-location-of-prisma-client
+  //  We strongly recommend you define a custom output path. In Prisma ORM version 6.6.0, not defining an output path will result 
+  //  in a warning. In Prisma ORM 7, the field will be required.
+  //
+  // ⚠️ Exclude the generated directory from version control in .gitignore: /src/generated/prisma
+  // https://www.prisma.io/docs/orm/prisma-schema/overview/generators#3-exclude-the-generated-directory-from-version-control
+  //
+  ///////////////////////////////////////////////////////////////////////////
   output          = "../src/generated/prisma"
+  // https://www.prisma.io/docs/orm/overview/databases/database-drivers#driver-adapters
   previewFeatures = ["driverAdapters"]
+
+  // Update your schema.prisma to explicitly include Vercel's platform: "rhel-openssl-3.0.x"
+  // This normally isn't an issue, until you try to deploy manually from GitHub Actions.
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
@@ -21,12 +31,10 @@ datasource db {
 }
 
 model Product {
-  // This id definition is more complex that usual.
-  // How does it differe from just: id  String @id @default(uuid()) ?
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
   name        String
-  slug        String   @unique(map: "product_slug_idx")
+  slug        String   @unique(map: "product_slug_index")
   category    String
   images      String[]
   brand       String
@@ -58,76 +66,183 @@ model Product {
 
   // Note: PostgreSQL will automatically round the value to match the specified scale,
   // based on its internal rounding rules (typically round-half-up).
+  // If using Postgres, you can also use the @db.Money type.
   price      Decimal  @default(0) @db.Decimal(12, 2)
   //^ Does this mean that he has a max of three star ratings?
   rating     Decimal  @default(0) @db.Decimal(3, 2)
   numReviews Int      @default(0)
   isFeatured Boolean  @default(false)
   banner     String?
-  // @db.Timestamp(6) adds milliseconds on to the end of it with 6 digits.
-  createdAt  DateTime @default(now()) @db.Timestamp(6)
+  // Brad appends @db.Timestamp(6). I don't think it's necessary.
+  createdAt  DateTime @default(now())
   // OrderItem   OrderItem[]
   // Review      Review[]
 
   @@map("products")
 }
 
-// model User {
-//   id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-//   name          String    @default("NO_NAME")
-//   email         String    @unique(map: "user_email_idx")
-//   emailVerified DateTime? @db.Timestamp(6)
-//   image         String?
-//   password      String?
-//   role          String    @default("user")
-//   address       Json?     @db.Json
-//   paymentMethod String?
-//   createdAt     DateTime  @default(now()) @db.Timestamp(6)
-//   updatedAt     DateTime  @updatedAt
-//   account       Account[]
-//   session       Session[]
-//   Cart          Cart[]
-//   Order         Order[]
-//   Review        Review[]
-// }
+///////////////////////////////////////////////////////////////////////////
+//
+// The Prisma enum maps to the Postgres ENUM type.
+// CREATE TYPE "Role" AS ENUM ('USER', 'ADMIN');
+// Ultimately, when a query result is returned, the value is of type string (i.e., 'USER', 'ADMIN').
+// However, the inferred type is still $Enums.Role. In order to correct the type inference, I did 
+// this in src/db/prisma.ts:
+// 
+//   user: {
+//     role: {
+//       compute(user) {
+//         return user.role.toString()
+//       }
+//     }
+//   },
+//
+///////////////////////////////////////////////////////////////////////////
 
-// model Account {
-//   userId            String  @db.Uuid
-//   type              String
-//   provider          String
-//   providerAccountId String
-//   refresh_token     String?
-//   access_token      String?
-//   expires_at        Int?
-//   token_type        String?
-//   scope             String?
-//   id_token          String?
-//   session_state     String?
+enum Role {
+  USER
+  ADMIN
+}
 
-//   createdAt DateTime @default(now()) @db.Timestamp(6)
-//   updatedAt DateTime @updatedAt
+model User {
+  ///////////////////////////////////////////////////////////////////////////
+  //
+  // In Brad's mini-project, Full App Build ( https://www.youtube.com/watch?v=I6DCo5RwHBE&t=17s )
+  // he uses: String @id @default(uuid())
+  // This uses Prisma's built-in uuid() function to generate UUIDs
+  // The UUID is generated by Prisma client at query time
+  // Conversely, gen_random_uuid() is a function native to PostgreSQL.
+  // In the latter case, the UUID is generated by the database itself during insertion.
+  // The @db.Uuid directive tells Prisma to use PostgreSQL's native UUID type instead of VARCHAR.
+  // The database engine handles the UUID generation.
+  // The second approach (dbgenerated + @db.Uuid) is generally considered better for PostgreSQL for several reasons:
+  //
+  //   1. Type safety: Using the native UUID type in PostgreSQL (@db.Uuid) is more type-safe 
+  //      and storage-efficient than storing UUIDs as strings.
+  //
+  //   2. Performance: Database-generated UUIDs can be more efficient since the database handles generation 
+  //      without additional network round-trips.
+  //  
+  //   3. Consistency: Using PostgreSQL's native UUID functions ensures the values are 
+  //      generated consistently by the database engine.
+  //
+  //   4. Indexing: PostgreSQL can more efficiently index its native UUID type compared to string representations.
+  //
+  //   5. Constraints: The database will enforce proper UUID formatting at the database level.
+  //
+  // Note: cuid() may be a more collision-resistant option than uuid().
+  // There also appears to be a ulid() that I've seen used in some official Prisma tutorials.
+  //
+  // Prisma docs show example of using gen_random_uuid() here:
+  //
+  //   https://www.prisma.io/docs/orm/prisma-schema/data-model/unsupported-database-features#native-database-functions
+  // 
+  // https://www.prisma.io/docs/orm/prisma-schema/data-model/models#using-functions
+  // Support for autoincrement(), now(), and dbgenerated(...) differ between databases.
+  //
+  ///////////////////////////////////////////////////////////////////////////
+  id   String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  // Eventually switch to fistName and lastName
+  // Brad does this:
+  // name String @default("NO_NAME")
+  name String
 
-//   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Brad does this, but I don't think it's necessary.
+  // email         String    @unique(map: "user_email_index")
+  email         String    @unique
+  // Brad does this:
+  // emailVerified DateTime? @db.Timestamp(6)
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
 
-//   @@id([provider, providerAccountId])
-// }
+  // ⚠️ At 1:52:30 Coding with Antionio removes sessions.
+  // sessions Session[]
+
+  password String?
+  // An enum is also a common type for the role field.
+  // https://www.prisma.io/docs/orm/prisma-schema/data-model/models#defining-enums
+  // ❌ role          String   @default("user")
+  //# Next Steps: 
+  //# Call npx prisma reset
+  //# Find out what the type of USER is when getting a user back.
+  //# Could just make an API call. 
+  //# Find out how to update a user and set role, etc.
+
+  role          Role     @default(USER)
+  // Working with JSON Fields in Prisma ORM: https://www.youtube.com/watch?v=gcpcxMxJ1AQ
+  // At the 5 minute mark he shows how to use the generic path property to search for a key
+  // with a specific value.
+  // In Postgres, Json maps to jsonb by default, but why not just  use that?
+  address       Json?    @db.Json // @db.Json may be redundant when using Postgres.
+  paymentMethod String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Cart          Cart[]
+  // Order         Order[]
+  // Review        Review[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId            String  @db.Uuid
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+///////////////////////////////////////////////////////////////////////////
+//
+// ⚠️ Since you're using a JWT strategy, you don't necessarily need the Session model.
+// With JWT, authentication tokens are stored client-side (like in localStorage or cookies) 
+// rather than in a database. The token itself contains everything needed for authentication, 
+// so the server doesn’t need to track active sessions.
+//
+///////////////////////////////////////////////////////////////////////////
 
 // model Session {
-//   sessionToken String   @id
+//   id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+//   sessionToken String   @unique
 //   userId       String   @db.Uuid
-//   expires      DateTime @db.Timestamp(6)
+//   expires      DateTime
 //   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-//   createdAt DateTime @default(now()) @db.Timestamp(6)
-//   updatedAt DateTime @updatedAt
+//   @@map("sessions")
 // }
+
+///////////////////////////////////////////////////////////////////////////
+//
+// ⚠️ At 1:53:45 Coding with Antonio discusses omitting this.
+// He says that we will later implement our own.
+// He says it's kind of misleading and not actually intended for
+// the credentials provider. Instead, it's actually intended to be
+// used with the email provider (i.e., magic link). Hence the `token` part.
+// Magic links work by sending a temporary token via email, allowing the 
+// user to sign in without a password. The VerificationToken model stores 
+// that token and expiration timestamp for this passwordless login flow.
+//
+///////////////////////////////////////////////////////////////////////////
 
 // model VerificationToken {
 //   identifier String
 //   token      String
 //   expires    DateTime
-
-//   @@id([identifier, token])
+//   @@unique([identifier, token])
+//   @@map("verification_tokens")
 // }
 
 // model Cart {
