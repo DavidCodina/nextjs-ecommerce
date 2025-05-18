@@ -11,26 +11,35 @@ env:
   # GH_TOKEN: ${{ secrets.GH_TOKEN }} # Required for commenting on pull requests for private repos
   #--------------------------------------------------------------------------
   #
-  # The job of this workflow is to generate create an ephemeral Neon database branch,
+  # About this workflow:
+  #
+  # The job of this workflow is to create an ephemeral Neon database branch,
   # run Prisma migrations against that branch, and then deploy a preview to Vercel.
-  # By default,
+  # By default, if branch tracking is enabled for preview environments, then...
   #
   #   https://vercel.com/docs/git/vercel-for-github#a-deployment-for-each-push
   #   "Vercel for GitHub will deploy every push by default. This includes
   #   pushes and pull requests made to branches" This is explicitly stated here:
   #
   # I'm not sure if this was always the case. From watching tutorials that are a few
-  # years old, they always only ever mention preview deployments on pull request.
+  # years old, they only ever mention preview deployments on pull request.
   # In any case, having automatic preview deployments for all branch pushes is a bit
-  # too heavy-handed. This is especially true if you're using the Vercel/Neon integration,
+  # too heavy-handed.
+  #
+  # This is especially true if you're using the Vercel/Neon integration,
   # which generates a new Neon branch for every preview deployment. Doing that will burn
   # through your Neon non-default branch compute credits very quickly! Ultimately, for
   # more fine-grained control, you really need to create a custom workflow.
   #
+  # In addition to this workflow, we'd likely also want to set up a workflow that generates
+  # a preview deployment when pushing development and/or staging branches.
+  #
+  #------------------------
   #
   # Don't forget to disable automatic preview deployments in Vercel dashboard.
   # Don't forget to disconnect from Vercel/Neon integration.
   #
+  #------------------------
   # Resources:
   #
   #   👍🏻 https://neon.tech/docs/guides/branching-github-actions
@@ -41,6 +50,8 @@ env:
   #   https://github.com/neondatabase-labs/preview-branches-with-vercel
   #
   #   https://neon.tech/blog/branching-with-preview-environments
+  #
+  #------------------------
   #
   # Gotcha:
   #
@@ -64,13 +75,12 @@ env:
   #--------------------------------------------------------------------------
 jobs:
   deploy-preview:
-    ## This is likely used for `Comment on Pull Request`.
-    ## However, it's likely too privileged.
-    ## https://github.com/thollander/actions-comment-pull-request
-    ## The action docs just use:
+    # Using `write` is necessary for the  `Comment on Pull Request` step.
+    # However, it's arguably too privileged.
+    # https://github.com/thollander/actions-comment-pull-request
+    # The action-comment-pull-request docs just use `write`.
     permissions:
       pull-requests: write
-    #! permissions: write-all
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -87,8 +97,10 @@ jobs:
           database: ${{ env.NEON_DATABASE_NAME }} # Necessary or will default to neondb and cause error.
           branch_name: preview/pr-${{ github.event.number }}-${{ steps.branch-name.outputs.current_branch }}
           api_key: ${{ env.NEON_API_KEY }}
-          ## role: ecommerce_owner # v6
-          username: ecommerce_owner ## Derive from secrets...
+          # Some demos derive role/username from secrets. It's not really a secret,
+          # but using secrets in this way makes the actual yaml more generic.
+          ## role: neondb_owner # v6
+          username: neondb_owner
           ## prisma: true # This doesn't seem necessary.
           # ❌ password: ...  # Unexpected input(s)
       ## neondatabase/create-branch-action@v6 : echo db_url_pooled ${{ steps.create-branch.outputs.db_url_pooled }}
