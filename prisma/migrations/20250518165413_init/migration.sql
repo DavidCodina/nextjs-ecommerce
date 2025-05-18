@@ -25,7 +25,6 @@ CREATE TABLE "products" (
 CREATE TABLE "users" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "name" TEXT NOT NULL,
-    "test" TEXT NOT NULL DEFAULT 'Testing123...',
     "email" TEXT NOT NULL,
     "emailVerified" TIMESTAMP(3),
     "image" TEXT,
