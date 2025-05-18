@@ -2,21 +2,7 @@ name: Create Preview Deployment
 #--------------------------------------------------------------------------
 #
 # https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#pull_request
-# By default, a workflow only runs when a pull_request event's activity type is opened, synchronize, or reopened. That said,
-# synchronize also applies to closed pull requests.
-#
-# ⚠️ Gotcha: When specifying `on: [pull_request]` the workflow will run even on closed pull requests.
-# More specifically, `synchronize` will still be triggered on closed pull requests. Conversely,
-# if we do this:
-#
-#   on: pull_request:
-#     types: [opened, synchronize, reopened]
-#
-# GitHub applies stricter rules - the workflow only runs for these specific events on active PRs.
-# The special behavior where synchronize events trigger for closed PRs is eliminated.
-# Obviously, that's incredibly unintuitive: GitHub treats implicitly included types differently
-# than explicitly specified ones,
-# ❌ on: [pull_request]
+# By default, a workflow only runs when a pull_request event's activity type is opened, synchronize, or reopened.
 #
 #--------------------------------------------------------------------------
 on:
