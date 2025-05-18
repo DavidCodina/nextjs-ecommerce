@@ -1,0 +1,129 @@
+name: Create Preview Deployment
+# https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#pull_request
+# By default, a workflow only runs when a pull_request event's activity type is opened, synchronize, or reopened.
+on: [pull_request]
+env:
+  NEON_DATABASE_USERNAME: ${{ secrets.PG_USERNAME }} # change this to your database username
+  NEON_DATABASE_NAME: ${{ secrets.PG_DATABASE }} # change this to your database name
+  NEON_API_KEY: ${{ secrets.NEON_API_KEY }} # You can generate a an API key in your account settings
+  NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }} # You can find this in your project settings
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+  # GH_TOKEN: ${{ secrets.GH_TOKEN }} # Required for commenting on pull requests for private repos
+  #--------------------------------------------------------------------------
+  #
+  # The job of this workflow is to generate create an ephemeral Neon database branch,
+  # run Prisma migrations against that branch, and then deploy a preview to Vercel.
+  # By default,
+  #
+  #   https://vercel.com/docs/git/vercel-for-github#a-deployment-for-each-push
+  #   "Vercel for GitHub will deploy every push by default. This includes
+  #   pushes and pull requests made to branches" This is explicitly stated here:
+  #
+  # I'm not sure if this was always the case. From watching tutorials that are a few
+  # years old, they always only ever mention preview deployments on pull request.
+  # In any case, having automatic preview deployments for all branch pushes is a bit
+  # too heavy-handed. This is especially true if you're using the Vercel/Neon integration,
+  # which generates a new Neon branch for every preview deployment. Doing that will burn
+  # through your Neon non-default branch compute credits very quickly! Ultimately, for
+  # more fine-grained control, you really need to create a custom workflow.
+  #
+  #
+  # Don't forget to disable automatic preview deployments in Vercel dashboard.
+  # Don't forget to disconnect from Vercel/Neon integration.
+  #
+  # Resources:
+  #
+  #   👍🏻 https://neon.tech/docs/guides/branching-github-actions
+  #   👍🏻 https://github.com/neondatabase/create-branch-action
+  #
+  #   Neon Developer workflow using Vercel and Github Actions at 12:45
+  #   https://www.youtube.com/watch?v=jjRasfbeYHk
+  #   https://github.com/neondatabase-labs/preview-branches-with-vercel
+  #
+  #   https://neon.tech/blog/branching-with-preview-environments
+  #
+  # Gotcha:
+  #
+  #   Unhandled Rejection: Error [PrismaClientInitializationError]: Prisma Client could
+  #   not locate the Query Engine for runtime "rhel-openssl-3.0.x". This happened because Prisma
+  #   Client was generated for "debian-openssl-3.0.x", but the actual deployment required "rhel-openssl-3.0.x".
+  #   Add "rhel-openssl-3.0.x" to `binaryTargets` in the "schema.prisma" file and run `prisma generate`
+  #   after saving it. Add this to the generator client in schema.prisma: provider = "prisma-client-js"
+  #
+  # The error arises from a platform mismatch between your GitHub Actions environment (Ubuntu/debian)
+  # and Vercel's runtime environment (rhel). Prisma Client requires platform-specific Query Engine
+  # binaries matched to the deployment environment. Your workflow built Prisma Client for
+  # debian-openssl-3.0.x (Ubuntu), but Vercel's serverless environment uses rhel-openssl-3.0.x
+  #
+  # GitHub Actions Runners Use Ubuntu. This means that Prisma was generated for Ubuntu (Debian-based)
+  # when your workflow executed the prisma generate command. However, when your app is deployed to Vercel,
+  # the runtime expects RHEL-based binaries—hence the PrismaClientInitializationError.
+  #
+  # https://www.prisma.io/docs/orm/prisma-schema/overview/generators#binary-targets
+  #
+  #--------------------------------------------------------------------------
+jobs:
+  deploy-preview:
+    ## This is likely used for `Comment on Pull Request`.
+    ## However, it's likely too privileged.
+    ## https://github.com/thollander/actions-comment-pull-request
+    ## The action docs just use:
+    permissions:
+      pull-requests: write
+    #! permissions: write-all
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Get Branch Name
+        id: branch-name
+        uses: tj-actions/branch-names@v8 # Does some magic to get the branch name.
+      - name: Create Neon Branch
+        id: create-branch
+        ## uses: neondatabase/create-branch-action@v6
+        uses: neondatabase/create-branch-action@v5
+        with:
+          project_id: ${{ env.NEON_PROJECT_ID }}
+          database: ${{ env.NEON_DATABASE_NAME }} # Necessary or will default to neondb and cause error.
+          branch_name: preview/pr-${{ github.event.number }}-${{ steps.branch-name.outputs.current_branch }}
+          api_key: ${{ env.NEON_API_KEY }}
+          ## role: ecommerce_owner # v6
+          username: ecommerce_owner ## Derive from secrets...
+          ## prisma: true # This doesn't seem necessary.
+          # ❌ password: ...  # Unexpected input(s)
+      ## neondatabase/create-branch-action@v6 : echo db_url_pooled ${{ steps.create-branch.outputs.db_url_pooled }}
+      - run: echo db_url_with_pooler ${{ steps.create-branch.outputs.db_url_with_pooler }}
+      - run: echo db_url ${{ steps.create-branch.outputs.db_url }}
+      - run: echo host ${{ steps.create-branch.outputs.host }}
+      - run: echo branch_id ${{ steps.create-branch.outputs.branch_id }}
+
+      # Pick properties off of the outputs magically created by
+      # neondatabase/create-branch-action@v5 from the previous step.
+      # https://github.com/neondatabase/create-branch-action?tab=readme-ov-file#outputs
+      - name: Run Migrations
+        run: |
+          touch .env
+          ## neondatabase/create-branch-action@v6 : echo DATABASE_URL=${{ steps.create-branch.outputs.db_url_pooled }} >> .env
+          echo DATABASE_URL=${{ steps.create-branch.outputs.db_url_with_pooler}} >> .env
+          echo DIRECT_URL=${{ steps.create-branch.outputs.db_url }} >> .env
+          ## neondatabase/create-branch-action@v6 : echo DATABASE_URL_UNPOOLED=${{ steps.create-branch.outputs.db_url_pooled  }} >> .env
+          npx prisma generate
+          npx prisma migrate deploy
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=preview --token=${{ env.VERCEL_TOKEN }}
+      # Will my vercel-build command interfere with this setup?
+      # Probably not because of the --prebuilt used below.
+      - name: Build Project Artifacts
+        run: vercel build --token=${{ env.VERCEL_TOKEN }}
+      - name: Deploy Preview to Vercel
+        id: deploy
+        run: echo preview_url=$(vercel deploy --prebuilt --token=${{ env.VERCEL_TOKEN }}) >> $GITHUB_OUTPUT
+      - name: Comment on Pull Request
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          # GITHUB_TOKEN: ${{ env.GH_TOKEN }}
+          message: |
+            Vercel Preview URL :rocket: : ${{ steps.deploy.outputs.preview_url }}
+            Neon branch :elephant: : https://console.neon.tech/app/projects/${{ env.NEON_PROJECT_ID }}/branches/${{ steps.create-branch.outputs.branch_id }}
